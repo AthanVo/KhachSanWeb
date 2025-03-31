@@ -1,0 +1,305 @@
+﻿@{
+    ViewData["Title"] = "Quản Lý Khách Sạn";
+    Layout = null; // Tắt layout
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/khachsan.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="header">
+        <div class="left">
+            <img src="https://via.placeholder.com/40" alt="Logo">
+            <div class="info">
+                <p>Tên NV:@Context.Session.GetString("HoTen")</p>
+                <p>Mã nhân viên:@Context.Session.GetInt32("NguoiDungId") </p>
+                <p>Hệ thống của Đức Thịnh</p>
+            </div>
+        </div>
+        <div class="right">
+            <div class="time" id="current-time"></div>
+            <div class="notification" onclick="toggleNotifications()">
+                <i class="fas fa-bell bell-icon"></i>
+                <span class="badge" id="notification-count">0</span>
+                <div class="dropdown" id="notification-dropdown">
+                    <!-- Danh sách thông báo sẽ được thêm bằng JavaScript -->
+                </div>
+            </div>
+            <<button class="button" onclick="openShiftEndModal()">Kết ca</button>
+            <button class="button" onclick="logout()">Đăng xuất</button>
+            <button class="button" onclick="changePassword()">Đổi mật khẩu</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="sidebar">
+            <h3>Thông tin chi tiết</h3>
+            <div class="stats">
+                <p>Tổng doanh thu: <span class="highlight">1,250,000</span></p>
+                <p>Tổng số khách: <span class="highlight">5</span></p>
+                <p>Tổng số phòng: <span class="highlight">10</span></p>
+                <p>Phòng đang sử dụng: <span class="highlight">5</span></p>
+                <p>Phòng trống: <span class="highlight">5</span></p>
+                <p>Phòng chờ thanh toán: <span class="highlight">0</span></p>
+                <p>Phòng chờ nhận: <span class="highlight">0</span></p>
+                <p>Phòng chờ trả: <span class="highlight">0</span></p>
+                <p>Phòng chờ đặt: <span class="highlight">0</span></p>
+            </div>
+        </div>
+
+        <div class="room-list">
+            <div class="toolbar">
+                <button onclick="openGroupModal()">Thêm vào nhóm</button>
+                <button onclick="openMergeBillModal()">Gộp hóa đơn</button>
+                <button>Gọi Bữa ăn</button>
+                <button>Chuyển Phòng</button>
+                <button>Đóng Phòng</button>
+            </div>
+            <div class="rooms">
+                @foreach (var room in Model)
+                {
+                    var isOccupied = room.DangSuDung ? "occupied" : ""; // Class occupied nếu phòng đang sử dụng
+                    var doorIcon = room.DangSuDung ? "fa-door-open" : "fa-door-closed"; // Icon cửa mở/đóng
+                    var priceFormatted = (room.GiaTheoGio / 1000).ToString("N0") + "K"; // Định dạng giá (275K)
+
+                    <div class="room @isOccupied"
+                         data-room-id="@room.MaPhong"
+                         data-customer="@room.KhachHang"
+                         data-type="@room.LoaiPhong"
+                         data-price="@room.GiaTheoGio.ToString("N0")đ"
+                         data-status="@room.TrangThai"
+                         data-current="@room.HienTrang"
+                         data-bill-id="@room.MaHoaDon"
+                         data-staff="@room.NhanVien"
+                         data-checkin="@room.NgayNhanPhong">
+                        <div class="content">
+                            <i class="fa-solid @doorIcon door-icon"></i>
+                            <div class="name">@room.SoPhong</div>
+                            <div class="type">@room.LoaiPhong</div>
+                            <div class="price">@priceFormatted</div>
+                            <div class="status">@room.TrangThai</div>
+                            
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Modal chi tiết (nhấp 1 lần cho phòng đang sử dụng) -->
+        <div class="modal" id="roomModal">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <h3>Thông tin chi tiết</h3>
+            <div class="info">
+                <p>Mã phòng: <span id="modal-room-id"></span></p>
+                <p>Khách hàng: <span id="modal-customer"></span></p>
+                <p>Loại phòng: <span id="modal-type"></span></p>
+                <p>Giá: <span id="modal-price" class="highlight"></span></p>
+                <p>Trạng thái: <span id="modal-status" class="highlight"></span></p>
+                <p>Hiện trạng: <span id="modal-current"></span></p>
+            </div>
+            <div class="actions">
+                <button onclick="openServiceModal()">Thêm dịch vụ</button>
+            </div>
+        </div>
+
+        <!-- Modal đặt phòng (nhấp 1 lần cho phòng trống) -->
+        <div class="booking-modal" id="bookingModal">
+            <button class="close-btn" onclick="closeBookingModal()">×</button>
+            <h3>Đặt phòng <span id="booking-room-id"></span></h3>
+            <div class="form">
+                <label for="booking-type">Loại đặt phòng:</label>
+                <select id="booking-type">
+                    <option value="Theo giờ">Theo giờ</option>
+                    <option value="Theo ngày">Theo ngày</option>
+                    <option value="Qua đêm">Qua đêm</option>
+                </select>
+                <label for="cccd-number">Số CCCD:</label>
+                <input type="text" id="cccd-number" placeholder="Nhập số CCCD">
+                <div class="cccd-actions">
+                    <button onclick="scanCCCD()">Quét CCCD</button>
+                </div>
+                <label for="customer-name">Họ tên khách hàng:</label>
+                <input type="text" id="customer-name" placeholder="Họ tên">
+                <label for="customer-address">Địa chỉ:</label>
+                <input type="text" id="customer-address" placeholder="Địa chỉ">
+                <label for="customer-nationality">Quốc tịch:</label>
+                <input type="text" id="customer-nationality" placeholder="Quốc tịch" value="Việt Nam">
+                <div class="actions">
+                    <button class="book-btn" onclick="bookRoom()">Đặt phòng</button>
+                    <button class="cancel-btn" onclick="closeBookingModal()">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal thêm dịch vụ -->
+        <div class="service-modal" id="serviceModal">
+            <button class="close-btn" onclick="closeServiceModal()">×</button>
+            <h3>Thêm dịch vụ cho <span id="service-room-id"></span></h3>
+            <div class="form">
+                <label for="service-name">Tên dịch vụ:</label>
+                <select id="service-name">
+                    <option value="COCA|15000">Coca - 15,000đ</option>
+                    <option value="REDBULL|15000">Redbull - 15,000đ</option>
+                    <option value="AQUA|15000">Aqua - 15,000đ</option>
+                    <option value="MI_GOI|20000">Mì gói - 20,000đ</option>
+                    <option value="BANH_NGOT|10000">Bánh ngọt - 10,000đ</option>
+                </select>
+                <label for="service-quantity">Số lượng:</label>
+                <input type="number" id="service-quantity" min="1" value="1">
+                <div class="actions">
+                    <button class="add-btn" onclick="addService()">Thêm</button>
+                    <button class="cancel-btn" onclick="closeServiceModal()">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal tính tiền (nhấp 2 lần) -->
+        <div class="billing-modal" id="billingModal">
+            <button class="close-btn" onclick="closeBillingModal()">×</button>
+            <h3>Thanh toán hóa đơn</h3>
+            <div class="info">
+                <p>Mã hóa đơn: <span id="billing-bill-id"></span></p>
+                <p>Tên NV mở phòng: <span id="billing-staff"></span></p>
+                <p>Mã NV mở phòng: NV01</p>
+                <p>Tên NV tính tiền:  @Context.Session.GetString("HoTen")</p>
+                <p>Mã NV tính tiền: NV01</p>
+                <p>Thời gian nhận phòng: <span id="billing-checkin"></span></p>
+                <p>Thời gian trả phòng: <span id="billing-checkout"></span></p>
+                <p>Ghi chú: <input type="text" id="billing-note" placeholder="Ghi chú" style="width: 100%; padding: 5px;"></p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã sản phẩm</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Khuyến mãi</th>
+                        <th>ĐVT</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>%CK</th>
+                        <th>Thành tiền</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody id="billing-services">
+                    <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                </tbody>
+            </table>
+            <div class="summary">
+                <div>
+                    <p>Tổng tiền hóa đơn: <span class="highlight" id="billing-total-services">0</span></p>
+                    <p>Chiết khấu hóa đơn: <span id="billing-discount">0</span></p>
+                    <p>Tiền phòng: <span id="billing-room-price">0</span></p>
+                    <p>Phí dịch vụ khách: <span id="billing-service-fee">0</span></p>
+                </div>
+                <div>
+                    <p>Tổng tiền thanh toán: <span class="highlight" id="billing-total">0</span></p>
+                    <p>Khách cần trả: <span class="highlight" id="billing-final">0</span></p>
+                    <p>Trả trước: <span id="billing-prepaid">0</span></p>
+                </div>
+            </div>
+            <div class="actions">
+                <button onclick="processPayment()">Tính tiền</button>
+            </div>
+        </div>
+
+        <!-- Modal thêm vào nhóm -->
+        <div class="group-modal" id="groupModal">
+            <button class="close-btn" onclick="closeGroupModal()">×</button>
+            <h3>Thêm vào nhóm</h3>
+            <div class="form">
+                <label for="group-name">Tên nhóm:</label>
+                <input type="text" id="group-name" placeholder="Tên nhóm">
+                <label for="group-representative">Người đại diện:</label>
+                <input type="text" id="group-representative" placeholder="Họ tên người đại diện">
+                <label for="group-phone">Số điện thoại:</label>
+                <input type="text" id="group-phone" placeholder="Số điện thoại">
+                <label>Chọn phòng:</label>
+                <div class="room-selection" id="group-room-selection">
+                    <!-- Danh sách phòng sẽ được thêm bằng JavaScript -->
+                </div>
+                <div class="actions">
+                    <button class="add-btn" onclick="addToGroup()">Thêm</button>
+                    <button class="cancel-btn" onclick="closeGroupModal()">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal gộp hóa đơn -->
+        <div class="merge-bill-modal" id="mergeBillModal">
+            <button class="close-btn" onclick="closeMergeBillModal()">×</button>
+            <h3>Gộp hóa đơn cho nhóm</h3>
+            <div class="info">
+                <p>Mã nhóm: <span id="merge-group-id"></span></p>
+                <p>Tên nhóm: <span id="merge-group-name"></span></p>
+                <p>Người đại diện: <span id="merge-group-representative"></span></p>
+                <p>Số điện thoại: <span id="merge-group-phone"></span></p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã phòng</th>
+                        <th>Mã hóa đơn</th>
+                        <th>Tiền phòng</th>
+                        <th>Tiền dịch vụ</th>
+                        <th>Tổng tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="merge-bill-rooms">
+                    <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                </tbody>
+            </table>
+            <div class="summary">
+                <div>
+                    <p>Tổng tiền dịch vụ: <span class="highlight" id="merge-total-services">0</span></p>
+                    <p>Tổng tiền phòng: <span id="merge-total-room">0</span></p>
+                </div>
+                <div>
+                    <p>Tổng tiền thanh toán: <span class="highlight" id="merge-total">0</span></p>
+                </div>
+            </div>
+            <div class="actions">
+                <button onclick="mergeBill()">Thanh toán</button>
+            </div>
+        </div>
+
+        <!-- Modal kết ca -->
+        <div class="shift-end-modal" id="shiftEndModal">
+            <button class="close-btn" onclick="closeShiftEndModal()">×</button>
+            <h3>Kết ca làm việc</h3>
+            <div class="info">
+                <p>Mã ca: <span id="shift-id">CA001</span></p>
+                <p>Thời gian bắt đầu: <span id="shift-start">22/03/2025 08:00:00</span></p>
+                <p>Thời gian kết thúc: <span id="shift-end"></span></p>
+                <p>Tổng tiền trong ca: <span class="highlight" id="shift-total">1,250,000đ</span></p>
+                <p>Tổng tiền chuyển giao: <span class="highlight" id="shift-transfer">1,250,000đ</span></p>
+            </div>
+            <div class="form">
+                <label for="next-staff">Nhân viên ca tiếp theo:</label>
+                <select id="next-staff">
+                    <option value="NV02">NV02 - Trần Quốc Đông</option>
+                    <option value="NV03">NV03 - Nguyễn Hồng Nam</option>
+                </select>
+                <label for="shift-note">Ghi chú:</label>
+                <textarea id="shift-note" placeholder="Ghi chú" rows="3"></textarea>
+                <div class="actions">
+                    <button class="confirm-btn" onclick="endShift()">Xác nhận</button>
+                    <button class="cancel-btn" onclick="closeShiftEndModal()">Hủy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src ="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src ="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src ="~/js/site.js" asp-append-version="true"></script>
+    <script src ="~/js/khachsan.js"></script>
+
+</body>
+</html>

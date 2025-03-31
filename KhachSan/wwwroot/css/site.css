@@ -1,0 +1,261 @@
+/* ??t font-size c? b?n cho toàn b? trang */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fb;
+    color: #333;
+}
+
+/* C?i thi?n thanh menu */
+.navbar {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to right, #007bff, #00b3b3); /* Thêm gradient */
+    padding: 10px 0;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.8rem;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.navbar-nav .nav-item .nav-link {
+    color: #f0f0f0;
+    padding: 12px 20px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+    .navbar-nav .nav-item .nav-link:hover {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+    }
+
+.navbar-toggler {
+    border-color: #ffffff;
+}
+
+.navbar-toggler-icon {
+    background-color: #ffffff;
+}
+
+/* C?i thi?n footer */
+.footer {
+    background-color: #2f2f2f;
+    color: #ffffff;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 1rem;
+}
+
+    .footer a {
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+        .footer a:hover {
+            text-decoration: underline;
+            color: #00b3b3;
+        }
+
+/* C?i thi?n các nút */
+button, .btn {
+    font-size: 1rem;
+    padding: 12px 24px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    background-color: #007bff;
+    color: white;
+    border: none;
+}
+
+    button:hover, .btn:hover {
+        background-color: #00b3b3;
+        color: white;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+/* C?i thi?n ph?n n?i dung chính */
+.container {
+    margin-top: 30px;
+    padding: 0 30px;
+}
+
+.main-content {
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2, h3 {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+h3 {
+    font-size: 1.75rem;
+    margin-bottom: 10px;
+}
+
+p {
+    line-height: 1.8;
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Thêm hi?u ?ng cho các ph?n t? input và focus */
+input, .form-control, textarea {
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+    input:focus, .form-control:focus, textarea:focus {
+        border-color: #00b3b3;
+        outline: none;
+        box-shadow: 0 0 0 0.1rem #00b3b3;
+    }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar-collapse {
+        text-align: center;
+    }
+
+    .navbar-nav {
+        margin-top: 10px;
+    }
+
+    .footer {
+        padding: 10px 0;
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Thêm hi?u ?ng chuy?n ??ng m??t mà cho các ph?n t? */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+body {
+    background-color: #f4f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar {
+    background: linear-gradient(90deg, #007bff, #00c4ff);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff !important;
+    transition: color 0.3s;
+}
+
+    .navbar-brand:hover {
+        color: #e0e0e0 !important;
+    }
+
+.nav-link {
+    color: #fff !important;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+    .nav-link:hover {
+        color: #e0e0e0 !important;
+    }
+
+.navbar-toggler {
+    border-color: #fff;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.container {
+    margin-top: 2rem;
+}
+
+.footer {
+    background: linear-gradient(90deg, #007bff, #00c4ff);
+    color: #fff;
+    padding: 1.5rem 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+    .footer a {
+        color: #e0e0e0;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+
+        .footer a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+main {
+    min-height: calc(100vh - 200px);
+}

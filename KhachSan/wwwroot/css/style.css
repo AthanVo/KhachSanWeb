@@ -1,0 +1,137 @@
+﻿/* General Reset and Layout */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    padding: 0 15px;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(to right, #007bff, #00b3b3);
+    color: white;
+    padding: 100px 0;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 30px;
+}
+
+    .hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        margin-bottom: 30px;
+    }
+
+    .hero .btn {
+        font-size: 1rem;
+        padding: 12px 30px;
+        border-radius: 5px;
+        background-color: #ff7f50;
+        color: white;
+        border: none;
+        text-decoration: none;
+    }
+
+        .hero .btn:hover {
+            background-color: #ff6347;
+        }
+
+/* Services Section */
+.services {
+    margin-top: 50px;
+    padding: 60px 0;
+    background-color: #ffffff;
+    border-radius: 8px;
+}
+
+    .services h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 40px;
+        color: #007bff;
+    }
+
+.service-card {
+    background-color: #f1f1f1;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .service-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .service-card i {
+        font-size: 3rem;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+
+    .service-card h3 {
+        font-size: 1.75rem;
+        margin-bottom: 10px;
+    }
+
+    .service-card p {
+        color: #666;
+        font-size: 1rem;
+    }
+
+/* Footer Section */
+.footer {
+    background-color: #2f2f2f;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 1rem;
+}
+
+    .footer a {
+        color: #00b3b3;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero p {
+        font-size: 1.1rem;
+    }
+
+    .service-card {
+        padding: 20px;
+    }
+
+        .service-card i {
+            font-size: 2.5rem;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+        }
+}

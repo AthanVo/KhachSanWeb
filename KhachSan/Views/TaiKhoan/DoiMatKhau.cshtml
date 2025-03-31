@@ -1,0 +1,32 @@
+﻿@model KhachSan.Models.DoiMatKhauViewModel
+
+@{
+    ViewData["Title"] = "Đổi mật khẩu";
+}
+
+<h2>Đổi mật khẩu</h2>
+
+@if (ViewBag.Thongbao != null)
+{
+    <div class="alert alert-info">@ViewBag.Thongbao</div>
+}
+
+<form asp-controller="TaiKhoan" asp-action="DoiMatKhau" method="post">
+    <div class="form-group">
+        <label asp-for="MatKhauCu">Mật khẩu cũ</label>
+        <input asp-for="MatKhauCu" type="password" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="MatKhauMoi">Mật khẩu mới</label>
+        <input asp-for="MatKhauMoi" type="password" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="XacNhanMatKhauMoi">Xác nhận mật khẩu mới</label>
+        <input asp-for="XacNhanMatKhauMoi" type="password" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Đổi mật khẩu</button>
+    <a href="@Url.Action("KhachSan", "KhachSan")" class="btn btn-secondary mt-3">Quay lại</a>
+</form>

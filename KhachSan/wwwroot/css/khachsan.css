@@ -1,0 +1,914 @@
+﻿
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f0f0f0;
+}
+
+.header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+    .header .left {
+        display: flex;
+        align-items: center;
+    }
+
+        .header .left img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .header .left .info {
+            font-size: 14px;
+        }
+
+    .header .right {
+        display: flex;
+        align-items: center;
+    }
+
+        .header .right .time {
+            margin-right: 20px;
+            font-size: 14px;
+        }
+
+        .header .right .notification {
+            position: relative;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+
+            .header .right .notification .bell-icon {
+                font-size: 18px;
+            }
+
+            .header .right .notification .badge {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                background-color: #e74c3c;
+                color: white;
+                border-radius: 50%;
+                padding: 2px 6px;
+                font-size: 12px;
+            }
+
+            .header .right .notification .dropdown {
+                display: none;
+                position: absolute;
+                top: 30px;
+                right: 0;
+                width: 300px;
+                background-color: white;
+                border-radius: 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+                .header .right .notification .dropdown .notification-item {
+                    padding: 10px;
+                    border-bottom: 1px solid #ddd;
+                    font-size: 14px;
+                    color: #34495e;
+                    cursor: pointer;
+                }
+
+                    .header .right .notification .dropdown .notification-item.unread {
+                        background-color: #f0f8ff;
+                    }
+
+                    .header .right .notification .dropdown .notification-item:hover {
+                        background-color: #f0f0f0;
+                    }
+
+        .header .right button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+            .header .right button:hover {
+                background-color: #c0392b;
+            }
+
+.main {
+    display: flex;
+    height: calc(100vh - 60px);
+    position: relative;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #ecf0f1;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+
+    .sidebar h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .sidebar .stats {
+        font-size: 14px;
+        color: #34495e;
+    }
+
+        .sidebar .stats p {
+            margin: 5px 0;
+        }
+
+        .sidebar .stats .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+.room-list {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+    overflow-y: auto;
+}
+
+    .room-list .toolbar {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+        .room-list .toolbar button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+            .room-list .toolbar button:hover {
+                background-color: #2980b9;
+            }
+
+    .room-list .rooms {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 20px;
+    }
+
+    .room-list .room {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        background-color: #ffcc99;
+        color: #333;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .room-list .room.occupied {
+            background-color: #b3ffcc;
+        }
+
+        .room-list .room:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .room-list .room .content {
+            text-align: center;
+        }
+
+        .room-list .room .door-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+            color: #8b4513;
+        }
+
+        .room-list .room .name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .room-list .room .type {
+            font-size: 14px;
+        }
+
+        .room-list .room .price {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .room-list .room .status {
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+/* Modal chi tiết (nhấp 1 lần cho phòng đang sử dụng) */
+.modal {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+    .modal h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .modal .info {
+        font-size: 14px;
+        color: #34495e;
+    }
+
+        .modal .info p {
+            margin: 5px 0;
+        }
+
+        .modal .info .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .modal .actions {
+        margin-top: 15px;
+        text-align: right;
+    }
+
+        .modal .actions button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+            .modal .actions button:hover {
+                background-color: #2980b9;
+            }
+
+    .modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal đặt phòng (nhấp 1 lần cho phòng trống) */
+.booking-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+}
+
+    .booking-modal h3 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .booking-modal .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .booking-modal .form label {
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .booking-modal .form input,
+        .booking-modal .form select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .booking-modal .form .cccd-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+            .booking-modal .form .cccd-actions button {
+                background-color: #27ae60;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                cursor: pointer;
+                border-radius: 5px;
+                font-size: 14px;
+            }
+
+                .booking-modal .form .cccd-actions button:hover {
+                    background-color: #219653;
+                }
+
+        .booking-modal .form .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+            .booking-modal .form .actions button {
+                padding: 8px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .booking-modal .form .actions .book-btn {
+                background-color: #27ae60;
+                color: white;
+            }
+
+                .booking-modal .form .actions .book-btn:hover {
+                    background-color: #219653;
+                }
+
+            .booking-modal .form .actions .cancel-btn {
+                background-color: #e74c3c;
+                color: white;
+            }
+
+                .booking-modal .form .actions .cancel-btn:hover {
+                    background-color: #c0392b;
+                }
+
+    .booking-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .booking-modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal thêm dịch vụ */
+.service-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 350px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1002;
+}
+
+    .service-modal h3 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .service-modal .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .service-modal .form label {
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .service-modal .form select,
+        .service-modal .form input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .service-modal .form .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+            .service-modal .form .actions button {
+                padding: 8px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .service-modal .form .actions .add-btn {
+                background-color: #27ae60;
+                color: white;
+            }
+
+                .service-modal .form .actions .add-btn:hover {
+                    background-color: #219653;
+                }
+
+            .service-modal .form .actions .cancel-btn {
+                background-color: #e74c3c;
+                color: white;
+            }
+
+                .service-modal .form .actions .cancel-btn:hover {
+                    background-color: #c0392b;
+                }
+
+    .service-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .service-modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal tính tiền (nhấp 2 lần) */
+.billing-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 800px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+    .billing-modal h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .billing-modal .info {
+        font-size: 14px;
+        color: #34495e;
+        margin-bottom: 20px;
+    }
+
+        .billing-modal .info p {
+            margin: 5px 0;
+        }
+
+        .billing-modal .info .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .billing-modal table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        .billing-modal table th,
+        .billing-modal table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .billing-modal table th {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+    .billing-modal .summary {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+        .billing-modal .summary p {
+            margin: 5px 0;
+        }
+
+        .billing-modal .summary .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .billing-modal .actions {
+        text-align: right;
+    }
+
+        .billing-modal .actions button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+            .billing-modal .actions button:hover {
+                background-color: #c0392b;
+            }
+
+    .billing-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .billing-modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal thêm vào nhóm */
+.group-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+}
+
+    .group-modal h3 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .group-modal .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .group-modal .form label {
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .group-modal .form input,
+        .group-modal .form select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .group-modal .form .room-selection {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+            .group-modal .form .room-selection label {
+                display: block;
+                margin: 5px 0;
+            }
+
+        .group-modal .form .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+            .group-modal .form .actions button {
+                padding: 8px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .group-modal .form .actions .add-btn {
+                background-color: #27ae60;
+                color: white;
+            }
+
+                .group-modal .form .actions .add-btn:hover {
+                    background-color: #219653;
+                }
+
+            .group-modal .form .actions .cancel-btn {
+                background-color: #e74c3c;
+                color: white;
+            }
+
+                .group-modal .form .actions .cancel-btn:hover {
+                    background-color: #c0392b;
+                }
+
+    .group-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .group-modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal gộp hóa đơn */
+.merge-bill-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 800px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+    .merge-bill-modal h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .merge-bill-modal .info {
+        font-size: 14px;
+        color: #34495e;
+        margin-bottom: 20px;
+    }
+
+        .merge-bill-modal .info p {
+            margin: 5px 0;
+        }
+
+        .merge-bill-modal .info .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .merge-bill-modal table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        .merge-bill-modal table th,
+        .merge-bill-modal table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .merge-bill-modal table th {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+    .merge-bill-modal .summary {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+        .merge-bill-modal .summary p {
+            margin: 5px 0;
+        }
+
+        .merge-bill-modal .summary .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .merge-bill-modal .actions {
+        text-align: right;
+    }
+
+        .merge-bill-modal .actions button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+            .merge-bill-modal .actions button:hover {
+                background-color: #c0392b;
+            }
+
+    .merge-bill-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .merge-bill-modal .close-btn:hover {
+            color: #333;
+        }
+
+/* Modal kết ca */
+.shift-end-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1001;
+}
+
+    .shift-end-modal h3 {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .shift-end-modal .info {
+        font-size: 14px;
+        color: #34495e;
+        margin-bottom: 20px;
+    }
+
+        .shift-end-modal .info p {
+            margin: 5px 0;
+        }
+
+        .shift-end-modal .info .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+    .shift-end-modal .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .shift-end-modal .form label {
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .shift-end-modal .form select,
+        .shift-end-modal .form textarea {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .shift-end-modal .form .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+            .shift-end-modal .form .actions button {
+                padding: 8px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .shift-end-modal .form .actions .confirm-btn {
+                background-color: #27ae60;
+                color: white;
+            }
+
+                .shift-end-modal .form .actions .confirm-btn:hover {
+                    background-color: #219653;
+                }
+
+            .shift-end-modal .form .actions .cancel-btn {
+                background-color: #e74c3c;
+                color: white;
+            }
+
+                .shift-end-modal .form .actions .cancel-btn:hover {
+                    background-color: #c0392b;
+                }
+
+    .shift-end-modal .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+    }
+
+        .shift-end-modal .close-btn:hover {
+            color: #333;
+        }
+
+

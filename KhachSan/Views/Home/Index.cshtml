@@ -1,0 +1,44 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+}
+
+<div class="container">
+    <!-- Header Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Chào Mừng</h1>
+            <p>Trải nghiệm tuyệt vời</p>
+            <a href="" class="btn btn-primary">Khám Phá Dịch Vụ</a>
+            <a class="nav-link text-dark" asp-area="KhachSan" asp-controller="KhachSan" asp-action="KhachSan">Khám Phá Dịch Vụ</a>
+        </div>
+    </header>
+
+    <!-- Phần Dịch Vụ -->
+    <section id="services" class="services">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-house-door-fill"></i>
+                    <h3>Phòng Ngủ Tiện Nghi</h3>
+                    <p>Hãy tận hưởng những phòng ngủ được thiết kế để thư giãn với đầy đủ tiện nghi hiện đại mà bạn cần.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-umbrella-fill"></i>
+                    <h3>Không Gian Thư Giãn</h3>
+                    <p>Thư giãn và phục hồi năng lượng trong không gian yên bình và tĩnh lặng của chúng tôi.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-people-fill"></i>
+                    <h3>Thân Thiện Với Gia Đình</h3>
+                    <p>Chúng tôi cung cấp các lựa chọn tuyệt vời cho các gia đình tìm kiếm một kỳ nghỉ vui vẻ và an toàn.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

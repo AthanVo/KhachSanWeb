@@ -1,0 +1,228 @@
+﻿@model KhachSan.Models.DangKyViewModel
+
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký thành viên</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1); /* Màu xanh dương */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .form-container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #0369a1; /* Màu xanh đậm */
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+            .form-group i {
+                position: absolute;
+                left: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #0ea5e9; /* Màu xanh nhạt */
+            }
+
+        .form-input {
+            width: 90%;
+            padding: 10px 10px 10px 40px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+            .form-input:focus {
+                border-color: #0ea5e9;
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+            }
+
+        .form-submit {
+            display: inline-block;
+            padding: 12px 20px;
+            border: none;
+            background-color: #0ea5e9;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+
+            .form-submit:hover {
+                background-color: #0369a1;
+            }
+
+        a {
+            text-decoration: none;
+            color: #0ea5e9;
+            font-size: 14px;
+            display: block;
+            margin-top: 15px;
+            transition: color 0.3s ease;
+        }
+
+            a:hover {
+                color: #0369a1;
+                text-decoration: underline;
+            }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        small {
+            color: #dc2626;
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        @@media (max-width: 768px) {
+            .form-container
+
+        {
+            width: 90%;
+            margin: 20px;
+        }
+
+        }
+
+        /* Thêm style cho label */
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #0369a1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Style cho input type date */
+        input[type="date"] {
+            padding-left: 40px;
+        }
+
+        /* Style cho button secondary */
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #0369a1;
+            margin-left: 10px;
+        }
+
+            .btn-secondary:hover {
+                background-color: #cbd5e1;
+            }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Đăng Ký Thành Viên</h2>
+
+        @if (ViewData["Loi9"] != null)
+        {
+            <div class="alert-danger">@ViewData["Loi9"]</div>
+        }
+
+        <form asp-controller="TaiKhoan" asp-action="Dangky" method="post">
+            <div class="form-group">
+                <i class="fa-regular fa-user"></i>
+                <input asp-for="HotenKH" class="form-input" placeholder="Họ và tên khách hàng" />
+                @if (ViewData["Loi1"] != null)
+                {
+                    <small>@ViewData["Loi1"]</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <i class="fa-regular fa-user"></i>
+                <input asp-for="TenDN" class="form-input" placeholder="Tên đăng nhập" />
+                @if (ViewData["Loi2"] != null)
+                {
+                    <small>@ViewData["Loi2"]</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <i class="fa-solid fa-key"></i>
+                <input asp-for="MatKhau" type="password" class="form-input" placeholder="Mật khẩu" />
+                @if (ViewData["Loi3"] != null)
+                {
+                    <small>@ViewData["Loi3"]</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <i class="fa-solid fa-key"></i>
+                <input asp-for="Matkhaunhaplai" type="password" class="form-input" placeholder="Nhập lại mật khẩu" />
+                @if (ViewData["Loi4"] != null)
+                {
+                    <small>@ViewData["Loi4"]</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <i class="fa-regular fa-envelope"></i>
+                <input asp-for="Email" type="email" class="form-input" placeholder="Email" />
+                @if (ViewData["Loi5"] != null)
+                {
+                    <small>@ViewData["Loi5"]</small>
+                }
+            </div>
+
+            <div class="form-group">
+                <i class="fa-solid fa-phone"></i>
+                <input asp-for="Dienthoai" class="form-input" placeholder="Số điện thoại" />
+                @if (ViewData["Loi6"] != null)
+                {
+                    <small>@ViewData["Loi6"]</small>
+                }
+            </div>
+
+            <button type="submit" class="form-submit">Đăng ký</button>
+            <a href="@Url.Action("Dangnhap", "TaiKhoan")">Đã có tài khoản? Đăng nhập ngay</a>
+            <a asp-area="Views" asp-action="Index" asp-controller="Home">Trở về trang chủ</a>
+        </form>
+    </div>
+</body>
+</html>
