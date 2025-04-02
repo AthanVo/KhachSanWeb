@@ -1,5 +1,4 @@
 ﻿@model KhachSan.Models.DangKyViewModel
-
 @{
     ViewData["Title"] = "Đăng ký";
     Layout = null;
@@ -10,13 +9,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký thành viên</title>
+    <title>Đăng ký</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0ea5e9, #0369a1); /* Màu xanh dương */
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -35,14 +34,14 @@
         }
 
         h2 {
-            color: #0369a1; /* Màu xanh đậm */
-            margin-bottom: 20px;
+            color: #0369a1;
+            margin-bottom: 30px;
             font-weight: 500;
         }
 
         .form-group {
             position: relative;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
             text-align: left;
         }
 
@@ -51,12 +50,12 @@
                 left: 10px;
                 top: 50%;
                 transform: translateY(-50%);
-                color: #0ea5e9; /* Màu xanh nhạt */
+                color: #0ea5e9;
             }
 
         .form-input {
             width: 90%;
-            padding: 10px 10px 10px 40px;
+            padding: 12px 10px 12px 40px;
             border: 1px solid #e2e8f0;
             border-radius: 5px;
             font-size: 16px;
@@ -79,13 +78,34 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            width: 100%;
+            width: 48%; /* Giảm chiều rộng để đặt 2 nút cạnh nhau */
             margin-top: 20px;
             font-weight: 500;
         }
 
             .form-submit:hover {
                 background-color: #0369a1;
+            }
+
+        .form-cancel {
+            display: inline-block;
+            padding: 12px 20px;
+            border: 1px solid #0ea5e9;
+            background-color: #fff;
+            color: #0ea5e9;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 48%; /* Giảm chiều rộng để đặt 2 nút cạnh nhau */
+            margin-top: 20px;
+            margin-left: 4%; /* Khoảng cách giữa 2 nút */
+            font-weight: 500;
+        }
+
+            .form-cancel:hover {
+                background-color: #e2e8f0;
+                color: #0369a1;
             }
 
         a {
@@ -106,13 +126,13 @@
             background-color: #fee2e2;
             color: #dc2626;
             border: 1px solid #fecaca;
-            padding: 10px;
-            margin-top: 20px;
+            padding: 12px;
+            margin-bottom: 20px;
             border-radius: 5px;
             font-size: 14px;
         }
 
-        small {
+        .text-danger {
             color: #dc2626;
             font-size: 12px;
             display: block;
@@ -120,109 +140,68 @@
         }
 
         @@media (max-width: 768px) {
-            .form-container
-
-        {
-            width: 90%;
-            margin: 20px;
-        }
-
-        }
-
-        /* Thêm style cho label */
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #0369a1;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Style cho input type date */
-        input[type="date"] {
-            padding-left: 40px;
-        }
-
-        /* Style cho button secondary */
-        .btn-secondary {
-            background-color: #e2e8f0;
-            color: #0369a1;
-            margin-left: 10px;
-        }
-
-            .btn-secondary:hover {
-                background-color: #cbd5e1;
+            .form-container {
+                width: 90%;
+                margin: 20px;
             }
+
+            .form-submit, .form-cancel {
+                width: 100%; /* Trên mobile, nút chiếm toàn bộ chiều rộng */
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
-        <h2>Đăng Ký Thành Viên</h2>
+        <h2>Đăng ký tài khoản</h2>
 
-        @if (ViewData["Loi9"] != null)
-        {
-            <div class="alert-danger">@ViewData["Loi9"]</div>
-        }
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-        <form asp-controller="TaiKhoan" asp-action="Dangky" method="post">
+        <form asp-action="Dangky" method="post">
+            @Html.AntiForgeryToken()
             <div class="form-group">
                 <i class="fa-regular fa-user"></i>
-                <input asp-for="HotenKH" class="form-input" placeholder="Họ và tên khách hàng" />
-                @if (ViewData["Loi1"] != null)
-                {
-                    <small>@ViewData["Loi1"]</small>
-                }
+                <input asp-for="HotenKH" class="form-input" placeholder="Họ tên" />
+                <span asp-validation-for="HotenKH" class="text-danger"></span>
             </div>
-
             <div class="form-group">
                 <i class="fa-regular fa-user"></i>
                 <input asp-for="TenDN" class="form-input" placeholder="Tên đăng nhập" />
-                @if (ViewData["Loi2"] != null)
-                {
-                    <small>@ViewData["Loi2"]</small>
-                }
+                <span asp-validation-for="TenDN" class="text-danger"></span>
             </div>
-
             <div class="form-group">
-                <i class="fa-solid fa-key"></i>
+                <i class="fa-solid fa-lock"></i>
                 <input asp-for="MatKhau" type="password" class="form-input" placeholder="Mật khẩu" />
-                @if (ViewData["Loi3"] != null)
-                {
-                    <small>@ViewData["Loi3"]</small>
-                }
+                <span asp-validation-for="MatKhau" class="text-danger"></span>
             </div>
-
             <div class="form-group">
-                <i class="fa-solid fa-key"></i>
+                <i class="fa-solid fa-lock"></i>
                 <input asp-for="Matkhaunhaplai" type="password" class="form-input" placeholder="Nhập lại mật khẩu" />
-                @if (ViewData["Loi4"] != null)
-                {
-                    <small>@ViewData["Loi4"]</small>
-                }
+                <span asp-validation-for="Matkhaunhaplai" class="text-danger"></span>
             </div>
-
             <div class="form-group">
                 <i class="fa-regular fa-envelope"></i>
-                <input asp-for="Email" type="email" class="form-input" placeholder="Email" />
-                @if (ViewData["Loi5"] != null)
-                {
-                    <small>@ViewData["Loi5"]</small>
-                }
+                <input asp-for="Email" class="form-input" placeholder="Email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
             </div>
-
             <div class="form-group">
                 <i class="fa-solid fa-phone"></i>
                 <input asp-for="Dienthoai" class="form-input" placeholder="Số điện thoại" />
-                @if (ViewData["Loi6"] != null)
-                {
-                    <small>@ViewData["Loi6"]</small>
-                }
+                <span asp-validation-for="Dienthoai" class="text-danger"></span>
             </div>
-
             <button type="submit" class="form-submit">Đăng ký</button>
-            <a href="@Url.Action("Dangnhap", "TaiKhoan")">Đã có tài khoản? Đăng nhập ngay</a>
-            <a asp-area="Views" asp-action="Index" asp-controller="Home">Trở về trang chủ</a>
+            <button type="reset" class="form-cancel">Hủy</button>
+            <a asp-action="Dangnhap">Đã có tài khoản? Đăng nhập tại đây</a>
+            <a asp-controller="Home" asp-action="Index">Trở về trang chủ</a>
         </form>
     </div>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
 </body>
 </html>

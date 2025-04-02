@@ -17,7 +17,7 @@ public partial class ThongBao
 
     public string LoaiThongBao { get; set; } = null!;
 
-    public DateTime? ThoiGianGui { get; set; }
+    public DateTime ThoiGianGui { get; set; }
 
     public string? TrangThai { get; set; }
 

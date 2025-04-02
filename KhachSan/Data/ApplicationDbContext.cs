@@ -50,7 +50,8 @@ public partial class ApplicationDbContext : DbContext
         modelBuilder.Entity<CaLamViec>(entity =>
         {
             entity.HasKey(e => e.MaCaLamViec).HasName("PK__CaLamVie__E545F62591AA82E2");
-
+            modelBuilder.Entity<CaLamViec>()
+    .ToTable(tb => tb.HasTrigger("TR_KiemTraNhanVien_CaLamViec"));
             entity.ToTable("CaLamViec");
 
             entity.Property(e => e.ThoiGianBatDau).HasColumnType("datetime");
@@ -374,4 +375,5 @@ public partial class ApplicationDbContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
 }

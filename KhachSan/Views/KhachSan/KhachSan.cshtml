@@ -31,7 +31,7 @@
                     <!-- Danh sách thông báo sẽ được thêm bằng JavaScript -->
                 </div>
             </div>
-            <<button class="button" onclick="openShiftEndModal()">Kết ca</button>
+            <button onclick="openShiftEndModal()">Kết ca làm việc</button>
             <button class="button" onclick="logout()">Đăng xuất</button>
             <button class="button" onclick="changePassword()">Đổi mật khẩu</button>
         </div>
@@ -41,15 +41,15 @@
         <div class="sidebar">
             <h3>Thông tin chi tiết</h3>
             <div class="stats">
-                <p>Tổng doanh thu: <span class="highlight">1,250,000</span></p>
-                <p>Tổng số khách: <span class="highlight">5</span></p>
-                <p>Tổng số phòng: <span class="highlight">10</span></p>
-                <p>Phòng đang sử dụng: <span class="highlight">5</span></p>
-                <p>Phòng trống: <span class="highlight">5</span></p>
-                <p>Phòng chờ thanh toán: <span class="highlight">0</span></p>
-                <p>Phòng chờ nhận: <span class="highlight">0</span></p>
-                <p>Phòng chờ trả: <span class="highlight">0</span></p>
-                <p>Phòng chờ đặt: <span class="highlight">0</span></p>
+                <p>Tổng doanh thu: <span class="highlight" id="total-revenue">0</span></p>
+                <p>Tổng số khách: <span class="highlight" id="total-customers">0</span></p>
+                <p>Tổng số phòng: <span class="highlight" id="total-rooms">0</span></p>
+                <p>Phòng đang sử dụng: <span class="highlight" id="occupied-rooms">0</span></p>
+                <p>Phòng trống: <span class="highlight" id="available-rooms">0</span></p>
+                <p>Phòng chờ thanh toán: <span class="highlight" id="pending-payment">0</span></p>
+                <p>Phòng chờ nhận: <span class="highlight" id="pending-checkin">0</span></p>
+                <p>Phòng chờ trả: <span class="highlight" id="pending-checkout">0</span></p>
+                <p>Phòng chờ đặt: <span class="highlight" id="pending-booking">0</span></p>
             </div>
         </div>
 
@@ -144,11 +144,7 @@
             <div class="form">
                 <label for="service-name">Tên dịch vụ:</label>
                 <select id="service-name">
-                    <option value="COCA|15000">Coca - 15,000đ</option>
-                    <option value="REDBULL|15000">Redbull - 15,000đ</option>
-                    <option value="AQUA|15000">Aqua - 15,000đ</option>
-                    <option value="MI_GOI|20000">Mì gói - 20,000đ</option>
-                    <option value="BANH_NGOT|10000">Bánh ngọt - 10,000đ</option>
+                    <!-- Danh sách dịch vụ sẽ được thêm bằng JavaScript -->
                 </select>
                 <label for="service-quantity">Số lượng:</label>
                 <input type="number" id="service-quantity" min="1" value="1">
@@ -165,7 +161,7 @@
             <h3>Thanh toán hóa đơn</h3>
             <div class="info">
                 <p>Mã hóa đơn: <span id="billing-bill-id"></span></p>
-                <p>Tên NV mở phòng: <span id="billing-staff"></span></p>
+                <p>Tên NV mở phòng:<span id="billing-staff"></span></p>
                 <p>Mã NV mở phòng: NV01</p>
                 <p>Tên NV tính tiền:  @Context.Session.GetString("HoTen")</p>
                 <p>Mã NV tính tiền: NV01</p>
@@ -274,22 +270,31 @@
             <button class="close-btn" onclick="closeShiftEndModal()">×</button>
             <h3>Kết ca làm việc</h3>
             <div class="info">
-                <p>Mã ca: <span id="shift-id">CA001</span></p>
-                <p>Thời gian bắt đầu: <span id="shift-start">22/03/2025 08:00:00</span></p>
+                <p>Mã ca: <span id="shift-id"></span></p>
+                <p>Thời gian bắt đầu: <span id="shift-start"></span></p>
                 <p>Thời gian kết thúc: <span id="shift-end"></span></p>
-                <p>Tổng tiền trong ca: <span class="highlight" id="shift-total">1,250,000đ</span></p>
-                <p>Tổng tiền chuyển giao: <span class="highlight" id="shift-transfer">1,250,000đ</span></p>
+                <p>Tổng tiền trong ca: <span class="highlight" id="shift-total"></span></p>
+                <p class="transfer-field" style="display: none;">
+                    Tổng tiền chuyển giao: <span class="highlight" id="shift-transfer"></span>
+                </p>
             </div>
             <div class="form">
+                <!-- Thêm dropdown cho quản trị viên chọn nhân viên -->
+                <div id="admin-staff-selection" style="display: none;">
+                    <label for="admin-staff">Nhân viên cần kết ca:</label>
+                    <select id="admin-staff">
+                        <option value="">-- Chọn nhân viên --</option>
+                        <!-- Danh sách nhân viên sẽ được thêm bằng JavaScript -->
+                    </select>
+                </div>
                 <label for="next-staff">Nhân viên ca tiếp theo:</label>
                 <select id="next-staff">
-                    <option value="NV02">NV02 - Trần Quốc Đông</option>
-                    <option value="NV03">NV03 - Nguyễn Hồng Nam</option>
+                    <!-- Danh sách nhân viên sẽ được thêm bằng JavaScript -->
                 </select>
                 <label for="shift-note">Ghi chú:</label>
                 <textarea id="shift-note" placeholder="Ghi chú" rows="3"></textarea>
                 <div class="actions">
-                    <button class="confirm-btn" onclick="endShift()">Xác nhận</button>
+                    <button class="confirm-btn" onclick="submitShiftEnd()">Kết thúc ca</button>
                     <button class="cancel-btn" onclick="closeShiftEndModal()">Hủy</button>
                 </div>
             </div>
@@ -300,6 +305,8 @@
     <script src ="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src ="~/js/site.js" asp-append-version="true"></script>
     <script src ="~/js/khachsan.js"></script>
-
+    <script src="~/js/ketca.js"></script>
+    <script src="~/js/thongbao.js"></script>
+    <script src="~/js/utils.js"></script>
 </body>
 </html>

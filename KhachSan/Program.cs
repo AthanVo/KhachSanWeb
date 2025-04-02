@@ -1,8 +1,11 @@
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using KhachSan.Data;
-using Microsoft.EntityFrameworkCore;
+using KhachSan.Middleware;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,17 +13,38 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
-// ??ng k� DbContext v?i chu?i k?t n?i t? appsettings.json
-builder.Services.AddDbContext<KhachSan.Data.ApplicationDbContext>(options =>
+// Đăng ký DbContext với chuỗi kết nối từ appsettings.json
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// C?u h�nh Session
+// Trong Program.cs
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/TaiKhoan/Dangnhap";
+        options.AccessDeniedPath = "/Home/AccessDenied"; // 👈 Trang từ chối truy cập
+        options.ExpireTimeSpan = TimeSpan.FromDays(30); // Thời gian sống của cookie
+        options.SlidingExpiration = true; // Gia hạn cookie khi sử dụng
+        options.Cookie.HttpOnly = true; // Chống XSS
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Chỉ dùng HTTPS
+        options.Cookie.IsEssential = true; // Luôn gửi cookie
+    });
+
+// Cấu hình Session - Tăng thời gian timeout
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Th?i gian timeout c?a Session
+    options.IdleTimeout = TimeSpan.FromHours(24); // Tăng thời gian session để giảm khả năng mất dữ liệu
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+// Cấu hình HSTS cho Production
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+    options.Preload = true;
 });
 
 var app = builder.Build();
@@ -31,43 +55,40 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+else
+{
+    // Khởi tạo DB trong môi trường Development
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+    }
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
-app.UseSession(); // S? d?ng Session
+// Đặt Session trước Authentication
+app.UseSession();
 
+// Thêm middleware để khôi phục session từ claims
+app.UseMiddleware<SessionRecoveryMiddleware>();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-// ??nh tuy?n cho Razor Pages
-app.MapRazorPages();
-
-// ??nh tuy?n cho MVC v� Areas
 app.UseEndpoints(endpoints =>
 {
-    // ??nh tuy?n c? th? cho /Admin
-    endpoints.MapControllerRoute(
-        name: "admin",
-        pattern: "Admin",
-        defaults: new { area = "Admin", controller = "Home", action = "Index" }
-    );
-
-    // ??nh tuy?n cho Areas
     endpoints.MapControllerRoute(
         name: "areas",
         pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
     );
-
-    // ??nh tuy?n m?c ??nh cho MVC (kh�ng thu?c Area)
     endpoints.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}"
     );
-
-    // ??nh tuy?n cho API (n?u c�)
-    endpoints.MapControllers();
+    endpoints.MapRazorPages();
 });
 
 app.Run();

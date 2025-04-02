@@ -1,5 +1,4 @@
 ﻿@model KhachSan.Models.DangNhapViewModel
-
 @{
     ViewData["Title"] = "Đăng nhập";
     Layout = null;
@@ -42,7 +41,7 @@
 
         .form-group {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: left;
         }
 
@@ -112,6 +111,23 @@
             font-size: 14px;
         }
 
+        .alert-success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .text-danger {
+            color: #dc2626;
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+
         @@media (max-width: 768px) {
             .form-container
 
@@ -160,26 +176,56 @@
                 color: #64748b;
                 font-size: 14px;
             }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-check-input {
+            margin-right: 8px;
+        }
+
+        .form-check-label {
+            font-size: 14px;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2>Đăng Nhập</h2>
 
-        @if (ViewBag.Thongbao != null)
+        @if (TempData["Error"] != null)
         {
-            <div class="alert-danger">@ViewBag.Thongbao</div>
+            <div class="alert-danger">@TempData["Error"]</div>
         }
 
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-success">@TempData["Success"]</div>
+        }
+
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
         <form asp-controller="TaiKhoan" asp-action="Dangnhap" method="post">
+            @Html.AntiForgeryToken()
             <div class="form-group">
                 <i class="fa-regular fa-user"></i>
                 <input asp-for="TenDN" class="form-input" placeholder="Tên đăng nhập" />
+                <span asp-validation-for="TenDN" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <i class="fa-solid fa-lock"></i>
                 <input asp-for="MatKhau" type="password" class="form-input" placeholder="Mật khẩu" />
+                <span asp-validation-for="MatKhau" class="text-danger"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label">Ghi nhớ đăng nhập</label>
             </div>
 
             <button type="submit" class="form-submit">Đăng nhập</button>
@@ -191,8 +237,14 @@
             </div>
 
             <a href="@Url.Action("Dangky", "TaiKhoan")">Chưa có tài khoản? Đăng ký ngay</a>
-            <a asp-area="Views" asp-action="Index" asp-controller="Home">Trở về trang chủ</a>
+            <a asp-controller="Home" asp-action="Index">Trở về trang chủ</a>
         </form>
     </div>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
 </body>
 </html>
