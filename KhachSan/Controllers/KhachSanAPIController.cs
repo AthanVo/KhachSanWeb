@@ -364,32 +364,72 @@ public async Task<IActionResult> CheckStuckShifts()
 
             return Ok(new { success = true, notifications, unreadCount });
         }
+
         [HttpPost("notifications/mark-read/{maThongBao}")]
         public async Task<IActionResult> MarkNotificationAsRead(int maThongBao)
         {
-            var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var thongBao = await _context.ThongBaos
-                .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao && t.MaNguoiNhan == maNhanVien);
-
-            if (thongBao == null)
+            Console.WriteLine($"Received request to mark as read: {maThongBao}");
+            try
             {
-                return Ok(new { success = false, message = "Không tìm thấy thông báo!" });
-            }
+                var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                Console.WriteLine($"Đánh dấu đã đọc: maThongBao={maThongBao}, maNhanVien={maNhanVien}");
 
-            if (thongBao.TrangThai == "Đã đọc")
+                var thongBao = await _context.ThongBaos
+                    .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao && t.MaNguoiNhan == maNhanVien);
+
+                if (thongBao == null)
+                {
+                    Console.WriteLine("Không tìm thấy thông báo");
+                    return Ok(new { success = false, message = "Không tìm thấy thông báo!" });
+                }
+
+                // Chỉ cập nhật nếu thực sự là "Chưa đọc"
+                if (thongBao.TrangThai == "Chưa đọc")
+                {
+                    Console.WriteLine($"Tìm thấy thông báo: {thongBao.TieuDe}, trạng thái hiện tại: {thongBao.TrangThai}");
+                    thongBao.TrangThai = "Đã đọc";
+                    _context.Entry(thongBao).State = EntityState.Modified;
+                    var result = await _context.SaveChangesAsync();
+                    Console.WriteLine($"Số bản ghi được cập nhật: {result}");
+
+                    // Kiểm tra lại sau khi lưu
+                    var updatedNotification = await _context.ThongBaos
+                        .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao);
+                    Console.WriteLine($"Trạng thái sau khi lưu: {updatedNotification?.TrangThai}");
+
+                    var unreadCount = await _context.ThongBaos
+                        .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Đã đánh dấu thông báo là đã đọc!",
+                        unreadCount,
+                        status = updatedNotification?.TrangThai
+                    });
+                }
+                else
+                {
+                    Console.WriteLine($"Thông báo đã được đánh dấu đọc từ trước");
+
+                    var unreadCount = await _context.ThongBaos
+                        .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Thông báo đã được đánh dấu đọc từ trước!",
+                        unreadCount,
+                        status = thongBao.TrangThai
+                    });
+                }
+            }
+            catch (Exception ex)
             {
-                return Ok(new { success = true, message = "Thông báo đã được đọc trước đó!" });
+                Console.WriteLine($"Lỗi: {ex.Message}");
+                return Ok(new { success = false, message = $"Lỗi: {ex.Message}" });
             }
-
-            thongBao.TrangThai = "Đã đọc";
-            await _context.SaveChangesAsync();
-
-            // Đếm lại số thông báo chưa đọc
-            var unreadCount = await _context.ThongBaos
-                .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
-
-            return Ok(new { success = true, message = "Đã đánh dấu thông báo là đã đọc!", unreadCount });
         }
-
     }
+
 }
