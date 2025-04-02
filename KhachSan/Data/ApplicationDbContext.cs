@@ -331,17 +331,15 @@ public partial class ApplicationDbContext : DbContext
         modelBuilder.Entity<Phong>(entity =>
         {
             entity.HasKey(e => e.MaPhong).HasName("PK__Phong__20BD5E5BEB5F3F4F");
-
             entity.ToTable("Phong");
-
             entity.HasIndex(e => e.SoPhong, "UQ__Phong__7C736CA1FB3838F8").IsUnique();
-
             entity.Property(e => e.DangSuDung).HasDefaultValue(false);
             entity.Property(e => e.SoPhong).HasMaxLength(10);
             entity.Property(e => e.ThoiGianTraPhongCuoi).HasColumnType("datetime");
 
-            entity.HasOne(d => d.MaLoaiPhongNavigation).WithMany(p => p.Phongs)
-                .HasForeignKey(d => d.MaLoaiPhong)
+            entity.HasOne(p => p.LoaiPhong)
+                .WithMany(lp => lp.Phongs) // Ánh xạ với collection Phongs trong LoaiPhong
+                .HasForeignKey(p => p.MaLoaiPhong)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Phong__MaLoaiPho__45F365D3");
         });

@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     loadNotifications();
     checkStuckShifts();
-    setInterval(checkStuckShifts, 120 * 60 * 1000); // Gọi định kỳ mỗi 1 giờ
+    setInterval(checkStuckShifts, 120 * 60 * 1000); // Gọi định kỳ mỗi 2 giờ
 });
 
 function loadNotifications() {
@@ -42,7 +42,6 @@ function loadNotifications() {
     }
 }
 
-// Đây là cách mà hàm continueLoadingNotifications có thể được cài đặt
 function continueLoadingNotifications(maNhanVien) {
     console.log("Đang tải thông báo chưa đọc...");
 
@@ -56,6 +55,14 @@ function continueLoadingNotifications(maNhanVien) {
         .then(response => response.json())
         .then(data => {
             console.log("Kết quả thông báo:", data);
+            // Thêm debug logs nếu cần
+            console.log("Raw data:", JSON.stringify(data));
+            console.log("Notifications data:", data.notifications);
+            if (data.notifications && data.notifications.length > 0) {
+                console.log("First notification:", data.notifications[0]);
+                console.log("Available fields:", Object.keys(data.notifications[0]));
+                console.log("ID field name:", Object.keys(data.notifications[0]).find(key => key.toLowerCase().includes('thongbao')));
+            }
 
             const dropdown = document.getElementById('notification-dropdown');
             const countElement = document.getElementById('notification-count');
@@ -103,15 +110,6 @@ function continueLoadingNotifications(maNhanVien) {
                 dropdown.innerHTML = '<p>Lỗi khi tải thông báo!</p>';
             }
         });
-
-        // Trong hàm continueLoadingNotifications
-.then(data => {
-    console.log("Raw data:", JSON.stringify(data));
-    console.log("Notifications data:", data.notifications);
-    if (data.notifications && data.notifications.length > 0) {
-        console.log("First notification:", data.notifications[0]);
-        console.log("Available fields:", Object.keys(data.notifications[0]));
-    }
 }
 
 function debounce(func, wait) {
@@ -219,12 +217,3 @@ function checkStuckShifts() {
             console.error('Lỗi khi kiểm tra ca bị kẹt:', error);
         });
 }
-// Thêm log để debug
-.then(data => {
-    console.log("Raw data:", JSON.stringify(data));
-    console.log("Notifications data:", data.notifications);
-    if (data.notifications && data.notifications.length > 0) {
-        console.log("First notification:", data.notifications[0]);
-        console.log("ID field name:", Object.keys(data.notifications[0]).find(key => key.toLowerCase().includes('thongbao')));
-    }
-// ...

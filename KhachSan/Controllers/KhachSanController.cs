@@ -20,6 +20,7 @@ namespace KhachSan.Controllers
             _context = context;
         }
 
+        [HttpGet]
         [Authorize(Roles = "Nhân viên, Quản trị")]
         public async Task<IActionResult> KhachSan()
         {
@@ -43,13 +44,13 @@ namespace KhachSan.Controllers
 
                 // Load dữ liệu phòng từ CSDL
                 var rooms = await _context.Phongs
-                    .Include(p => p.MaLoaiPhongNavigation)
+                    .Include(p => p.LoaiPhong)
                     .Select(p => new ModelViewPhong
                     {
                         MaPhong = p.MaPhong,
                         SoPhong = p.SoPhong,
-                        LoaiPhong = p.MaLoaiPhongNavigation.TenLoaiPhong,
-                        GiaTheoGio = p.MaLoaiPhongNavigation.GiaTheoGio,
+                        LoaiPhong = p.LoaiPhong.TenLoaiPhong,
+                        GiaTheoGio = p.LoaiPhong.GiaTheoGio,
                         DangSuDung = p.DangSuDung,
                         MoTa = p.MoTa,
                         TrangThai = p.DangSuDung ? "Đang sử dụng" : "Trống"

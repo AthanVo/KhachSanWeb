@@ -7,7 +7,7 @@ public partial class LoaiPhong
 {
     public int MaLoaiPhong { get; set; }
 
-    public string TenLoaiPhong { get; set; } = null!;
+    public string TenLoaiPhong { get; set; } 
 
     public decimal GiaTheoGio { get; set; }
 

@@ -14,9 +14,11 @@ namespace KhachSan.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public KhachSanAPIController(ApplicationDbContext context)
+        private readonly ILogger<KhachSanAPIController> _logger;
+        public KhachSanAPIController(ApplicationDbContext context, ILogger<KhachSanAPIController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet("staff/available")]
@@ -42,6 +44,7 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> GetCurrentShift()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
             var caHienTai = await _context.CaLamViecs
                 .Where(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc")
                 .OrderByDescending(c => c.ThoiGianBatDau)
@@ -373,6 +376,7 @@ public async Task<IActionResult> CheckStuckShifts()
             {
                 var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
                 Console.WriteLine($"Đánh dấu đã đọc: maThongBao={maThongBao}, maNhanVien={maNhanVien}");
+                _logger.LogInformation("Đánh dấu đã đọc: maThongBao={MaThongBao}, maNhanVien={MaNhanVien}", maThongBao, maNhanVien);
 
                 var thongBao = await _context.ThongBaos
                     .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao && t.MaNguoiNhan == maNhanVien);
@@ -430,6 +434,185 @@ public async Task<IActionResult> CheckStuckShifts()
                 return Ok(new { success = false, message = $"Lỗi: {ex.Message}" });
             }
         }
-    }
 
-}
+        public class BookRoomModel
+        {
+            public int MaPhong { get; set; } // Thay SoPhong bằng MaPhong
+            public string LoaiGiayTo { get; set; }
+            public string SoGiayTo { get; set; }
+            public string HoTen { get; set; }
+            public string DiaChi { get; set; }
+            public string QuocTich { get; set; }
+            public string LoaiDatPhong { get; set; }
+        }
+
+        [HttpPost("BookRoom")]
+        public async Task<IActionResult> BookRoom([FromBody] BookRoomModel model)
+        {
+            try
+            {
+                if (model == null || model.MaPhong <= 0)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ" });
+
+                _logger.LogInformation($"Đang kiểm tra phòng với MaPhong: {model.MaPhong}");
+
+                // Kiểm tra phòng có tồn tại không
+                var phong = await _context.Phongs
+                    .FirstOrDefaultAsync(p => p.MaPhong == model.MaPhong && !p.DangSuDung);
+                if (phong == null)
+                {
+                    _logger.LogWarning($"Phòng không tồn tại hoặc đang sử dụng: MaPhong = {model.MaPhong}");
+                    return NotFound(new { success = false, message = "Phòng không tồn tại hoặc đang sử dụng" });
+                }
+
+                var khachHang = await _context.KhachHangLuuTrus
+                    .FirstOrDefaultAsync(kh => kh.SoGiayTo == model.SoGiayTo);
+                if (khachHang == null)
+                {
+                    khachHang = new KhachHangLuuTru
+                    {
+                        LoaiGiayTo = model.LoaiGiayTo,
+                        SoGiayTo = model.SoGiayTo,
+                        HoTen = model.HoTen,
+                        DiaChi = model.DiaChi,
+                        QuocTich = model.QuocTich,
+                        NgayTao = DateTime.Now
+                    };
+                    _context.KhachHangLuuTrus.Add(khachHang);
+                    await _context.SaveChangesAsync();
+                }
+
+                var maNhanVienClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(maNhanVienClaim))
+                    return Unauthorized(new { success = false, message = "Không xác định được nhân viên" });
+                var maNhanVien = int.Parse(maNhanVienClaim);
+
+                var datPhong = new DatPhong
+                {
+                    MaPhong = phong.MaPhong,
+                    MaKhachHangLuuTru = khachHang.MaKhachHangLuuTru,
+                    MaNhanVien = maNhanVien,
+                    NgayNhanPhong = DateTime.Now,
+                    TrangThai = "Đã nhận phòng"
+                };
+                _context.DatPhongs.Add(datPhong);
+                phong.DangSuDung = true;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, maDatPhong = datPhong.MaDatPhong });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đặt phòng");
+                return StatusCode(500, new { success = false, message = $"Lỗi khi đặt phòng: {ex.Message}" });
+            }
+        }
+
+        private IActionResult Json(object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public class AddServiceModel
+        {
+            public int MaDatPhong { get; set; }
+            public int MaDichVu { get; set; }
+            public int SoLuong { get; set; }
+        }
+
+        [HttpPost("AddService")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> AddService([FromBody] AddServiceModel model)
+        {
+            try
+            {
+                var datPhong = await _context.DatPhongs
+                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
+                if (datPhong == null)
+                    return Ok(new { success = false, message = "Không tìm thấy đặt phòng" });
+
+                var dichVu = await _context.DichVus.FirstOrDefaultAsync(dv => dv.MaDichVu == model.MaDichVu);
+                if (dichVu == null)
+                    return Ok(new { success = false, message = "Dịch vụ không tồn tại" });
+
+                var chiTietDichVu = new ChiTietDichVu
+                {
+                    MaDatPhong = model.MaDatPhong,
+                    MaDichVu = model.MaDichVu,
+                    SoLuong = model.SoLuong,
+                    DonGia = dichVu.Gia,
+                    ThanhTien = dichVu.Gia * model.SoLuong
+                };
+                _context.ChiTietDichVus.Add(chiTietDichVu);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, thanhTien = chiTietDichVu.ThanhTien });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = $"Lỗi khi thêm dịch vụ: {ex.Message}" });
+            }
+        }
+
+        public class PaymentModel
+        {
+            public int MaDatPhong { get; set; }
+            public string GhiChu { get; set; }
+        }
+
+        [HttpPost("ProcessPayment")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> ProcessPayment([FromBody] PaymentModel model)
+        {
+            try
+            {
+                var datPhong = await _context.DatPhongs
+                    .Include(dp => dp.MaPhongNavigation) // Sửa thành MaPhongNavigation
+                    .ThenInclude(p => p.LoaiPhong)
+                    .Include(dp => dp.ChiTietDichVus)
+                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
+                if (datPhong == null)
+                    return Ok(new { success = false, message = "Không tìm thấy đặt phòng" });
+
+                var thoiGianO = (DateTime.Now - datPhong.NgayNhanPhong).TotalHours;
+                var loaiPhong = datPhong.MaPhongNavigation.LoaiPhong; // Sửa thành MaPhongNavigation
+                decimal tongTienPhong = thoiGianO <= 24
+                    ? (decimal)Math.Ceiling(thoiGianO) * loaiPhong.GiaTheoGio
+                    : loaiPhong.GiaTheoNgay;
+
+                var tongTienDichVu = datPhong.ChiTietDichVus?.Sum(ct => ct.ThanhTien) ?? 0;
+                var tongTien = tongTienPhong + tongTienDichVu;
+
+                datPhong.NgayTraPhong = DateTime.Now;
+                datPhong.TongThoiGian = (int)Math.Ceiling(thoiGianO);
+                datPhong.TongTienTheoThoiGian = tongTienPhong;
+                datPhong.TongTienDichVu = tongTienDichVu;
+                datPhong.TrangThai = "Đã trả phòng";
+                datPhong.MaPhongNavigation.DangSuDung = false; // Sửa thành MaPhongNavigation
+
+                var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var caHienTai = await _context.CaLamViecs
+                    .FirstOrDefaultAsync(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc");
+
+                var hoaDon = new HoaDon
+                {
+                    MaCaLamViec = caHienTai?.MaCaLamViec,
+                    MaDatPhong = datPhong.MaDatPhong,
+                    NgayXuat = DateTime.Now,
+                    TongTien = tongTien,
+                    PhuongThucThanhToan = "Tiền mặt",
+                    TrangThaiThanhToan = "Đã thanh toán",
+                    LoaiHoaDon = "Tiền phòng"
+                };
+                _context.HoaDons.Add(hoaDon);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, tongTien = tongTien, tongTienPhong, tongTienDichVu });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = $"Lỗi khi thanh toán: {ex.Message}" });
+            }
+        }
+    }
+ }
