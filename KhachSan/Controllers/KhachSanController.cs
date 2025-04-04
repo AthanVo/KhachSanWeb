@@ -13,11 +13,13 @@ namespace KhachSan.Controllers
 {
     public class KhachSanController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDBContext _context;
+        private readonly ILogger<KhachSanController> _logger;
 
-        public KhachSanController(ApplicationDbContext context)
+        public KhachSanController(ApplicationDBContext context, ILogger<KhachSanController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -26,44 +28,83 @@ namespace KhachSan.Controllers
         {
             try
             {
-                // Kiểm tra xem session có tồn tại không
-                // Nếu middleware hoạt động đúng, session sẽ được khôi phục tự động
+                // Kiểm tra và khôi phục session
                 if (HttpContext.Session.GetString("UserId") == null)
                 {
-                    // Session bị mất, nhưng đã có middleware khôi phục
-                    // Thêm logging để theo dõi
                     var userId = User.FindFirstValue("UserId");
                     var userName = User.FindFirstValue("UserName");
 
-                    if (!string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out int parsedUserId))
                     {
-                        // Ghi log cho việc khôi phục session
-                        Console.WriteLine($"Session đã được khôi phục tự động cho người dùng: {userName}");
+                        _logger.LogWarning("Không thể khôi phục session: UserId không hợp lệ.");
+                    }
+                    else
+                    {
+                        HttpContext.Session.SetString("UserId", parsedUserId.ToString());
+                        _logger.LogInformation($"Session đã được khôi phục tự động cho người dùng: {userName}");
                     }
                 }
 
                 // Load dữ liệu phòng từ CSDL
-                var rooms = await _context.Phongs
+                var rooms = await _context.Phong
                     .Include(p => p.LoaiPhong)
+                    .Include(p => p.DatPhong.Where(dp => dp.TrangThai == "Đã nhận phòng" || dp.TrangThai == "Đã trả phòng"))
+                        .ThenInclude(dp => dp.KhachHangLuuTru)
+                    .Include(p => p.DatPhong)
+                        .ThenInclude(dp => dp.NhanVien)
+                    .Include(p => p.DatPhong)
+                        .ThenInclude(dp => dp.HoaDon)
                     .Select(p => new ModelViewPhong
                     {
                         MaPhong = p.MaPhong,
                         SoPhong = p.SoPhong,
                         LoaiPhong = p.LoaiPhong.TenLoaiPhong,
                         GiaTheoGio = p.LoaiPhong.GiaTheoGio,
+                        GiaTheoNgay = p.LoaiPhong.GiaTheoNgay,
                         DangSuDung = p.DangSuDung,
                         MoTa = p.MoTa,
-                        TrangThai = p.DangSuDung ? "Đang sử dụng" : "Trống"
+                        TrangThai = p.DangSuDung ? "Đang sử dụng" : "Trống",
+                        MaDatPhong = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => (int?)dp.MaDatPhong)
+                            .FirstOrDefault() : null,
+                        KhachHang = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => dp.MaKhachHangLuuTru != null ? dp.KhachHangLuuTru.HoTen : "")
+                            .FirstOrDefault() : "",
+                        NhanVien = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => dp.MaNhanVien != null ? dp.NhanVien.HoTen : "")
+                            .FirstOrDefault() : "",
+                        MaNhanVien = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => (int?)dp.MaNhanVien)
+                            .FirstOrDefault() : null,
+                        NgayNhanPhong = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => (DateTime?)dp.NgayNhanPhong)
+                            .FirstOrDefault() : null,
+                        MaHoaDon = p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã nhận phòng")
+                            .Select(dp => dp.HoaDon != null && dp.HoaDon.Any() ? (int?)dp.HoaDon.FirstOrDefault().MaHoaDon : null)
+                            .FirstOrDefault() : null,
+                        HienTrang = p.MoTa,
+                        ThoiGianTraPhongCuoi = !p.DangSuDung ? p.DatPhong
+                            .Where(dp => dp.MaPhong == p.MaPhong && dp.TrangThai == "Đã trả phòng")
+                            .OrderByDescending(dp => dp.NgayTraPhong)
+                            .Select(dp => (DateTime?)dp.NgayTraPhong)
+                            .FirstOrDefault() : null
                     })
-                    .OrderBy(p => p.SoPhong) // Sắp xếp theo số phòng
+                    .OrderBy(p => p.SoPhong)
                     .ToListAsync();
 
                 return View(rooms);
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Có lỗi xảy ra khi tải danh sách phòng: {ex.Message}";
-                return RedirectToAction("Index", "Home"); // Chuyển hướng về trang chủ nếu lỗi
+                _logger.LogError(ex, "Có lỗi xảy ra khi tải danh sách phòng.");
+                TempData["Error"] = "Có lỗi xảy ra khi tải danh sách phòng. Vui lòng thử lại sau.";
+                return RedirectToAction("Index", "Home");
             }
         }
     }

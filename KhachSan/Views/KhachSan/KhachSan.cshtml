@@ -73,11 +73,14 @@
                          data-customer="@room.KhachHang"
                          data-type="@room.LoaiPhong"
                          data-price="@room.GiaTheoGio.ToString("N0")đ"
+                         data-price-hour="@room.GiaTheoGio.ToString("N0")"
+                         data-price-day="@room.GiaTheoNgay.ToString("N0")"
                          data-status="@room.TrangThai"
                          data-current="@room.HienTrang"
                          data-bill-id="@room.MaHoaDon"
                          data-staff="@room.NhanVien"
-                         data-checkin="@room.NgayNhanPhong">
+                         data-checkin="@room.NgayNhanPhong"
+                         data-datphong-id="@room.MaDatPhong"> <!-- Thêm data-datphong-id -->
                         <div class="content">
                             <i class="fa-solid @doorIcon door-icon"></i>
                             <div class="name">@room.SoPhong</div>
@@ -134,7 +137,7 @@
                 <label for="customer-nationality">Quốc tịch:</label>
                 <input type="text" id="customer-nationality" placeholder="Quốc tịch" value="Việt Nam">
                 <div class="actions">
-                    <button class="book-btn" onclick="bookRoom()">Đặt phòng</button>
+                    <button class="book-btn" id="book-room-btn">Đặt phòng</button>
                     <button class="cancel-btn" onclick="closeBookingModal()">Hủy</button>
                 </div>
             </div>
@@ -308,6 +311,6 @@
     <script src ="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src ="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/khachsan.js"></script>
-
+    
 </body>
 </html>

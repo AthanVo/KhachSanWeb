@@ -14,27 +14,40 @@ builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
 // Đăng ký DbContext với chuỗi kết nối từ appsettings.json
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Trong Program.cs
+// Cấu hình CORS
+// Cấu hình CORS - Cập nhật để cho phép localhost:5284
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("https://localhost:7112", "https://localhost:5284")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Cấu hình Authentication (Cookie-based)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/TaiKhoan/Dangnhap";
-        options.AccessDeniedPath = "/Home/AccessDenied"; // 👈 Trang từ chối truy cập
-        options.ExpireTimeSpan = TimeSpan.FromDays(30); // Thời gian sống của cookie
-        options.SlidingExpiration = true; // Gia hạn cookie khi sử dụng
-        options.Cookie.HttpOnly = true; // Chống XSS
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Chỉ dùng HTTPS
-        options.Cookie.IsEssential = true; // Luôn gửi cookie
+        options.AccessDeniedPath = "/Home/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.IsEssential = true;
     });
 
-// Cấu hình Session - Tăng thời gian timeout
+// Cấu hình Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(24); // Tăng thời gian session để giảm khả năng mất dữ liệu
+    options.IdleTimeout = TimeSpan.FromHours(24);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -57,11 +70,11 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    // Khởi tạo DB trong môi trường Development
+    // Áp dụng migrations trong môi trường Development
     using (var scope = app.Services.CreateScope())
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        dbContext.Database.EnsureCreated();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+        dbContext.Database.Migrate();
     }
 }
 
@@ -69,10 +82,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Đặt Session trước Authentication
-app.UseSession();
+app.UseCors("AllowFrontend");
 
-// Thêm middleware để khôi phục session từ claims
+app.UseSession();
 app.UseMiddleware<SessionRecoveryMiddleware>();
 
 app.UseAuthentication();

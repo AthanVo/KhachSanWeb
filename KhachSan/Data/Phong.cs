@@ -12,6 +12,7 @@ public partial class Phong
     public string? MoTa { get; set; }
     public DateTime? ThoiGianTraPhongCuoi { get; set; }
 
-    public virtual ICollection<DatPhong> DatPhongs { get; set; } = new List<DatPhong>();
-    public LoaiPhong LoaiPhong { get; set; } // Chỉ giữ một thuộc tính điều hướng
+    // Navigation properties
+    public virtual LoaiPhong LoaiPhong { get; set; } = null!;
+    public virtual ICollection<DatPhong> DatPhong { get; set; } = new List<DatPhong>();
 }

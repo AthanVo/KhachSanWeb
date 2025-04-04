@@ -21,15 +21,16 @@ public partial class DatPhong
     public int? MaGiamGia { get; set; }
     public decimal? SoTienGiam { get; set; }
     public string? TrangThaiThanhToan { get; set; }
-    public DateTime? NgayTao { get; set; }
-    public DateTime? NgayCapNhat { get; set; }
+    public DateTime NgayTao { get; set; }
+    public DateTime NgayCapNhat { get; set; }
 
-    public virtual ICollection<ChiTietDichVu> ChiTietDichVus { get; set; } = new List<ChiTietDichVu>();
-    public virtual ICollection<HoaDon> HoaDons { get; set; } = new List<HoaDon>();
-    public virtual GiamGium? MaGiamGiaNavigation { get; set; }
-    public virtual KhachHangLuuTru? MaKhachHangLuuTruNavigation { get; set; }
-    public virtual NguoiDung? MaNguoiDungNavigation { get; set; }
-    public virtual NguoiDung MaNhanVienNavigation { get; set; } = null!;
-    public virtual NhomDatPhong? MaNhomDatPhongNavigation { get; set; }
-    public virtual Phong MaPhongNavigation { get; set; } = null!; // Chỉ giữ thuộc tính này
+    // Navigation properties
+    public virtual NhomDatPhong? NhomDatPhong { get; set; }
+    public virtual NguoiDung? NguoiDung { get; set; }
+    public virtual NguoiDung NhanVien { get; set; } = null!;
+    public virtual Phong Phong { get; set; } = null!;
+    public virtual KhachHangLuuTru? KhachHangLuuTru { get; set; }
+    public virtual GiamGia? GiamGia { get; set; }
+    public virtual ICollection<ChiTietDichVu> ChiTietDichVu { get; set; } = new List<ChiTietDichVu>();
+    public virtual ICollection<HoaDon> HoaDon { get; set; } = new List<HoaDon>();
 }

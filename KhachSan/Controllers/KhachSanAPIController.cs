@@ -12,10 +12,10 @@ namespace KhachSan.Controllers
     [Authorize(Roles = "Nhân viên, Quản trị")]
     public class KhachSanAPIController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDBContext _context;
 
         private readonly ILogger<KhachSanAPIController> _logger;
-        public KhachSanAPIController(ApplicationDbContext context, ILogger<KhachSanAPIController> logger)
+        public KhachSanAPIController(ApplicationDBContext context, ILogger<KhachSanAPIController> logger)
         {
             _context = context;
             _logger = logger;
@@ -25,7 +25,7 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> GetAvailableStaff()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var staffList = await _context.NguoiDungs
+            var staffList = await _context.NguoiDung
                 .Where(n => n.MaNguoiDung != maNhanVien
                          && (n.VaiTro == "Nhân viên" || n.VaiTro == "Quản trị")
                          && n.TrangThai == "Hoạt động")
@@ -45,7 +45,7 @@ namespace KhachSan.Controllers
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-            var caHienTai = await _context.CaLamViecs
+            var caHienTai = await _context.CaLamViec
                 .Where(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc")
                 .OrderByDescending(c => c.ThoiGianBatDau)
                 .Select(c => new
@@ -63,7 +63,7 @@ namespace KhachSan.Controllers
                 return Ok(new { success = false, message = "Bạn chưa bắt đầu ca làm việc!" });
             }
 
-            var nhanViens = await _context.NguoiDungs
+            var nhanViens = await _context.NguoiDung
                 .Where(nv => (nv.VaiTro == "Nhân viên" || nv.VaiTro == "Quản trị")
                           && nv.MaNguoiDung != maNhanVien
                           && nv.TrangThai == "Hoạt động")
@@ -75,7 +75,7 @@ namespace KhachSan.Controllers
                 })
                 .ToListAsync();
 
-            var tongTienHoaDon = await _context.HoaDons
+            var tongTienHoaDon = await _context.HoaDon
                 .Where(hd => hd.MaCaLamViec == caHienTai.MaCa && hd.TrangThaiThanhToan == "Đã thanh toán")
                 .SumAsync(hd => hd.TongTien);
 
@@ -92,19 +92,26 @@ namespace KhachSan.Controllers
         [HttpPost("end-shift")]
         public async Task<IActionResult> EndShift([FromBody] EndShiftModel model)
         {
-            var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var user = await _context.NguoiDungs.FindAsync(maNhanVien);
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int maNhanVien))
+            {
+                return Unauthorized(new { success = false, message = "Không xác định được nhân viên." });
+            }
+
+            if (model == null || model.TongTienTrongCa < 0 || model.TongTienChuyenGiao < 0)
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+            }
+
+            var user = await _context.NguoiDung.FindAsync(maNhanVien);
             if (user == null)
             {
                 return Ok(new { success = false, message = "Không tìm thấy thông tin nhân viên!" });
             }
 
-            // Kiểm tra ca làm việc
             CaLamViec caHienTai = null;
             if (user.VaiTro == "Quản trị" && model.MaNhanVien.HasValue)
             {
-                // Quản trị viên kết ca hộ nhân viên khác
-                caHienTai = await _context.CaLamViecs
+                caHienTai = await _context.CaLamViec
                     .Where(c => c.MaNhanVien == model.MaNhanVien.Value && c.TrangThai == "Đang làm việc")
                     .OrderByDescending(c => c.ThoiGianBatDau)
                     .FirstOrDefaultAsync();
@@ -113,11 +120,17 @@ namespace KhachSan.Controllers
                 {
                     return Ok(new { success = false, message = "Không tìm thấy ca làm việc đang hoạt động cho nhân viên được chọn!" });
                 }
+
+                // Kiểm tra trạng thái nhân viên (thay thế logic của trigger)
+                var nhanVien = await _context.NguoiDung.FindAsync(model.MaNhanVien.Value);
+                if (nhanVien == null || nhanVien.TrangThai != "Hoạt động")
+                {
+                    return Ok(new { success = false, message = "Nhân viên không ở trạng thái hoạt động!" });
+                }
             }
             else
             {
-                // Nhân viên kết ca cho chính mình
-                caHienTai = await _context.CaLamViecs
+                caHienTai = await _context.CaLamViec
                     .Where(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc")
                     .OrderByDescending(c => c.ThoiGianBatDau)
                     .FirstOrDefaultAsync();
@@ -125,6 +138,12 @@ namespace KhachSan.Controllers
                 if (caHienTai == null)
                 {
                     return Ok(new { success = false, message = "Không tìm thấy ca làm việc đang hoạt động!" });
+                }
+
+                // Kiểm tra trạng thái nhân viên
+                if (user.TrangThai != "Hoạt động")
+                {
+                    return Ok(new { success = false, message = "Nhân viên không ở trạng thái hoạt động!" });
                 }
             }
 
@@ -139,7 +158,7 @@ namespace KhachSan.Controllers
 
                     if (model.MaNhanVienCaTiepTheo.HasValue)
                     {
-                        var nhanVienTiepTheo = await _context.NguoiDungs
+                        var nhanVienTiepTheo = await _context.NguoiDung
                             .FirstOrDefaultAsync(nv => nv.MaNguoiDung == model.MaNhanVienCaTiepTheo.Value
                                                     && (nv.VaiTro == "Nhân viên" || nv.VaiTro == "Quản trị")
                                                     && nv.TrangThai == "Hoạt động");
@@ -158,9 +177,9 @@ namespace KhachSan.Controllers
                             TrangThai = "Đang làm việc",
                             TongTienChuyenGiao = model.TongTienChuyenGiao
                         };
-                        await _context.CaLamViecs.AddAsync(caMoi);
+                        await _context.CaLamViec.AddAsync(caMoi);
 
-                        var nhanVienHienTai = await _context.NguoiDungs.FindAsync(maNhanVien);
+                        var nhanVienHienTai = await _context.NguoiDung.FindAsync(maNhanVien);
                         var thongBao = new ThongBao
                         {
                             MaNguoiGui = maNhanVien,
@@ -171,7 +190,7 @@ namespace KhachSan.Controllers
                             ThoiGianGui = DateTime.Now,
                             TrangThai = "Chưa đọc"
                         };
-                        await _context.ThongBaos.AddAsync(thongBao);
+                        await _context.ThongBao.AddAsync(thongBao);
                     }
 
                     var lichSuThaoTac = new LichSuThaoTac
@@ -182,7 +201,7 @@ namespace KhachSan.Controllers
                         ChiTiet = model.GhiChu,
                         ThoiGian = DateTime.Now
                     };
-                    await _context.LichSuThaoTacs.AddAsync(lichSuThaoTac);
+                    await _context.LichSuThaoTac.AddAsync(lichSuThaoTac);
 
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -200,35 +219,36 @@ namespace KhachSan.Controllers
                 }
             }
         }
+        
 
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {
-            var totalRevenue = await _context.HoaDons
+            var totalRevenue = await _context.HoaDon
                 .Where(hd => hd.TrangThaiThanhToan == "Đã thanh toán")
                 .SumAsync(hd => hd.TongTien);
 
-            var totalCustomers = await _context.KhachHangLuuTrus
+            var totalCustomers = await _context.KhachHangLuuTru
                 .CountAsync();
 
-            var totalRooms = await _context.Phongs
+            var totalRooms = await _context.Phong
                 .CountAsync();
 
-            var occupiedRooms = await _context.Phongs
+            var occupiedRooms = await _context.Phong
                 .CountAsync(p => p.DangSuDung == true);
 
             var availableRooms = totalRooms - occupiedRooms;
 
-            var pendingPayment = await _context.DatPhongs
+            var pendingPayment = await _context.DatPhong
                 .CountAsync(dp => dp.TrangThaiThanhToan == "Chưa thanh toán");
 
-            var pendingCheckin = await _context.DatPhongs
+            var pendingCheckin = await _context.DatPhong
                 .CountAsync(dp => dp.TrangThai == "Chờ xác nhận");
 
-            var pendingCheckout = await _context.DatPhongs
+            var pendingCheckout = await _context.DatPhong
                 .CountAsync(dp => dp.TrangThai == "Đã nhận phòng");
 
-            var pendingBooking = await _context.DatPhongs
+            var pendingBooking = await _context.DatPhong
                 .CountAsync(dp => dp.TrangThai == "Chờ xác nhận");
 
             var stats = new
@@ -250,7 +270,7 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> GetCurrentUser()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var user = await _context.NguoiDungs
+            var user = await _context.NguoiDung
                 .Where(n => n.MaNguoiDung == maNhanVien)
                 .Select(n => new
                 {
@@ -271,15 +291,15 @@ namespace KhachSan.Controllers
         [HttpGet("check-stuck-shifts")]
 public async Task<IActionResult> CheckStuckShifts()
 {
-    var stuckShifts = await _context.CaLamViecs
+    var stuckShifts = await _context.CaLamViec
         .Where(c => c.TrangThai == "Đang làm việc"
                  && c.ThoiGianBatDau < DateTime.Now.AddHours(-24))
         .ToListAsync();
 
     foreach (var shift in stuckShifts)
     {
-        var nhanVien = await _context.NguoiDungs.FindAsync(shift.MaNhanVien);
-        var quanTris = await _context.NguoiDungs
+        var nhanVien = await _context.NguoiDung.FindAsync(shift.MaNhanVien);
+        var quanTris = await _context.NguoiDung
             .Where(nv => nv.VaiTro == "Quản trị")
             .ToListAsync();
 
@@ -296,7 +316,7 @@ public async Task<IActionResult> CheckStuckShifts()
                 ThoiGianGui = DateTime.Now,
                 TrangThai = "Chưa đọc"
             };
-            await _context.ThongBaos.AddAsync(thongBaoQuanTri);
+            await _context.ThongBao.AddAsync(thongBaoQuanTri);
         }
 
         // Gửi thông báo cho nhân viên bị kẹt ca
@@ -310,24 +330,24 @@ public async Task<IActionResult> CheckStuckShifts()
             ThoiGianGui = DateTime.Now,
             TrangThai = "Chưa đọc"
         };
-        await _context.ThongBaos.AddAsync(thongBaoNhanVien);
+        await _context.ThongBao.AddAsync(thongBaoNhanVien);
     }
 
     await _context.SaveChangesAsync();
     return Ok(new { success = true, message = "Đã kiểm tra các ca bị kẹt!" });
 }
 
-        [HttpGet("notifications")]
+        [HttpGet("Notifications")]
         public async Task<IActionResult> GetNotifications()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var notifications = await _context.ThongBaos
+            var notifications = await _context.ThongBao
                 .Where(tb => tb.MaNguoiNhan == maNhanVien)
                 .OrderByDescending(tb => tb.ThoiGianGui)
                 .Select(tb => new
                 {
                     Id = tb.MaThongBao,
-                    Sender = tb.MaNguoiGuiNavigation != null ? tb.MaNguoiGuiNavigation.HoTen : "Hệ thống",
+                    Sender = tb.NguoiGui != null ? tb.NguoiGui.HoTen : "Hệ thống", // Sửa từ MaNguoiGuiNavigation thành NguoiGui
                     Title = tb.TieuDe,
                     Content = tb.NoiDung,
                     Type = tb.LoaiThongBao,
@@ -337,19 +357,18 @@ public async Task<IActionResult> CheckStuckShifts()
                 .ToListAsync();
 
             var unreadCount = notifications.Count(n => n.Status == "Chưa đọc");
-
             return Ok(new
             {
                 success = true,
-                notifications = notifications,
-                unreadCount = unreadCount
+                notifications,
+                unreadCount
             });
         }
         [HttpGet("notifications/unread")]
         public async Task<IActionResult> GetUnreadNotifications()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var notifications = await _context.ThongBaos
+            var notifications = await _context.ThongBao
                 .Where(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc")
                 .OrderByDescending(t => t.ThoiGianGui)
                 .Select(t => new
@@ -378,7 +397,7 @@ public async Task<IActionResult> CheckStuckShifts()
                 Console.WriteLine($"Đánh dấu đã đọc: maThongBao={maThongBao}, maNhanVien={maNhanVien}");
                 _logger.LogInformation("Đánh dấu đã đọc: maThongBao={MaThongBao}, maNhanVien={MaNhanVien}", maThongBao, maNhanVien);
 
-                var thongBao = await _context.ThongBaos
+                var thongBao = await _context.ThongBao
                     .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao && t.MaNguoiNhan == maNhanVien);
 
                 if (thongBao == null)
@@ -397,11 +416,11 @@ public async Task<IActionResult> CheckStuckShifts()
                     Console.WriteLine($"Số bản ghi được cập nhật: {result}");
 
                     // Kiểm tra lại sau khi lưu
-                    var updatedNotification = await _context.ThongBaos
+                    var updatedNotification = await _context.ThongBao
                         .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao);
                     Console.WriteLine($"Trạng thái sau khi lưu: {updatedNotification?.TrangThai}");
 
-                    var unreadCount = await _context.ThongBaos
+                    var unreadCount = await _context.ThongBao
                         .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
 
                     return Ok(new
@@ -416,7 +435,7 @@ public async Task<IActionResult> CheckStuckShifts()
                 {
                     Console.WriteLine($"Thông báo đã được đánh dấu đọc từ trước");
 
-                    var unreadCount = await _context.ThongBaos
+                    var unreadCount = await _context.ThongBao
                         .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
 
                     return Ok(new
@@ -456,8 +475,8 @@ public async Task<IActionResult> CheckStuckShifts()
 
                 _logger.LogInformation($"Đang kiểm tra phòng với MaPhong: {model.MaPhong}");
 
-                // Kiểm tra phòng có tồn tại không
-                var phong = await _context.Phongs
+                var phong = await _context.Phong
+                    .Include(p => p.LoaiPhong)
                     .FirstOrDefaultAsync(p => p.MaPhong == model.MaPhong && !p.DangSuDung);
                 if (phong == null)
                 {
@@ -465,7 +484,7 @@ public async Task<IActionResult> CheckStuckShifts()
                     return NotFound(new { success = false, message = "Phòng không tồn tại hoặc đang sử dụng" });
                 }
 
-                var khachHang = await _context.KhachHangLuuTrus
+                var khachHang = await _context.KhachHangLuuTru
                     .FirstOrDefaultAsync(kh => kh.SoGiayTo == model.SoGiayTo);
                 if (khachHang == null)
                 {
@@ -478,14 +497,23 @@ public async Task<IActionResult> CheckStuckShifts()
                         QuocTich = model.QuocTich,
                         NgayTao = DateTime.Now
                     };
-                    _context.KhachHangLuuTrus.Add(khachHang);
+                    _context.KhachHangLuuTru.Add(khachHang);
                     await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Đã thêm khách hàng mới: MaKhachHangLuuTru = {khachHang.MaKhachHangLuuTru}");
+                }
+                else
+                {
+                    khachHang.HoTen = model.HoTen;
+                    khachHang.DiaChi = model.DiaChi;
+                    khachHang.QuocTich = model.QuocTich;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Đã cập nhật thông tin khách hàng: MaKhachHangLuuTru = {khachHang.MaKhachHangLuuTru}");
                 }
 
-                var maNhanVienClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(maNhanVienClaim))
+                if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int maNhanVien))
+                {
                     return Unauthorized(new { success = false, message = "Không xác định được nhân viên" });
-                var maNhanVien = int.Parse(maNhanVienClaim);
+                }
 
                 var datPhong = new DatPhong
                 {
@@ -495,22 +523,93 @@ public async Task<IActionResult> CheckStuckShifts()
                     NgayNhanPhong = DateTime.Now,
                     TrangThai = "Đã nhận phòng"
                 };
-                _context.DatPhongs.Add(datPhong);
+                _context.DatPhong.Add(datPhong);
                 phong.DangSuDung = true;
                 await _context.SaveChangesAsync();
+                _logger.LogInformation($"Đã thêm đặt phòng: MaDatPhong = {datPhong.MaDatPhong}");
 
                 return Ok(new { success = true, maDatPhong = datPhong.MaDatPhong });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi đặt phòng");
-                return StatusCode(500, new { success = false, message = $"Lỗi khi đặt phòng: {ex.Message}" });
+                _logger.LogError(ex, "Lỗi khi đặt phòng: {Message}, InnerException: {InnerException}", ex.Message, ex.InnerException?.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi đặt phòng: {ex.Message}, Inner: {ex.InnerException?.Message}" });
             }
         }
 
-        private IActionResult Json(object value)
+        [HttpGet("GetServices")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> GetServices()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var services = await _context.DichVu
+                    .Where(d => d.TrangThai == "Hoạt động") // Chỉ lấy các dịch vụ đang hoạt động
+                    .Select(d => new
+                    {
+                        maDichVu = d.MaDichVu,
+                        tenDichVu = d.TenDichVu,
+                        gia = d.Gia
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, services });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tải danh sách dịch vụ: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi tải danh sách dịch vụ: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("AddService")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> AddService([FromBody] AddServiceModel model)
+        {
+            try
+            {
+                if (model == null)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Model rỗng" });
+
+                if (model.MaDatPhong <= 0)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Mã đặt phòng không hợp lệ" });
+
+                if (model.MaDichVu <= 0)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Mã dịch vụ không hợp lệ" });
+
+                if (model.SoLuong <= 0)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Số lượng phải lớn hơn 0" });
+
+                var datPhong = await _context.DatPhong
+                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
+                if (datPhong == null)
+                    return BadRequest(new { success = false, message = $"Không tìm thấy đặt phòng với MaDatPhong = {model.MaDatPhong} hoặc đặt phòng không ở trạng thái 'Đã nhận phòng'" });
+
+                var dichVu = await _context.DichVu
+                    .FirstOrDefaultAsync(d => d.MaDichVu == model.MaDichVu && d.TrangThai == "Hoạt động");
+                if (dichVu == null)
+                    return BadRequest(new { success = false, message = $"Dịch vụ với MaDichVu = {model.MaDichVu} không tồn tại hoặc không ở trạng thái 'Hoạt động'" });
+
+                var chiTietDichVu = new ChiTietDichVu
+                {
+                    MaDatPhong = model.MaDatPhong,
+                    MaDichVu = model.MaDichVu,
+                    SoLuong = model.SoLuong,
+                    DonGia = dichVu.Gia,
+                    ThanhTien = model.SoLuong * dichVu.Gia,
+                    NgayTao = DateTime.Now
+                };
+
+                _context.ChiTietDichVu.Add(chiTietDichVu);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi thêm dịch vụ: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi thêm dịch vụ: {ex.Message}" });
+            }
         }
 
         public class AddServiceModel
@@ -520,37 +619,60 @@ public async Task<IActionResult> CheckStuckShifts()
             public int SoLuong { get; set; }
         }
 
-        [HttpPost("AddService")]
+        [HttpGet("GetRoom/{maPhong}")]
+public async Task<IActionResult> GetRoom(int maPhong)
+{
+    var phong = await _context.Phong
+        .Include(p => p.LoaiPhong)
+        .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
+    if (phong == null)
+    {
+        return NotFound(new { success = false, message = "Phòng không tồn tại" });
+    }
+
+    return Ok(new
+    {
+        success = true,
+        maPhong = phong.MaPhong,
+        soPhong = phong.SoPhong,
+        dangSuDung = phong.DangSuDung,
+        giaTheoGio = phong.LoaiPhong.GiaTheoGio,
+        giaTheoNgay = phong.LoaiPhong.GiaTheoNgay
+    });
+}
+
+        [HttpGet("GetRoomServices")]
         [Authorize(Roles = "Nhân viên, Quản trị")]
-        public async Task<IActionResult> AddService([FromBody] AddServiceModel model)
+        public async Task<IActionResult> GetRoomServices(int maDatPhong)
         {
             try
             {
-                var datPhong = await _context.DatPhongs
-                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
+                if (maDatPhong <= 0)
+                    return BadRequest(new { success = false, message = "Mã đặt phòng không hợp lệ" });
+
+                var datPhong = await _context.DatPhong
+                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == maDatPhong && dp.TrangThai == "Đã nhận phòng");
                 if (datPhong == null)
-                    return Ok(new { success = false, message = "Không tìm thấy đặt phòng" });
+                    return NotFound(new { success = false, message = "Không tìm thấy đặt phòng hoặc đặt phòng không ở trạng thái 'Đã nhận phòng'" });
 
-                var dichVu = await _context.DichVus.FirstOrDefaultAsync(dv => dv.MaDichVu == model.MaDichVu);
-                if (dichVu == null)
-                    return Ok(new { success = false, message = "Dịch vụ không tồn tại" });
+                var services = await _context.ChiTietDichVu
+                    .Where(ct => ct.MaDatPhong == maDatPhong)
+                    .Select(ct => new
+                    {
+                        maDichVu = ct.MaDichVu,
+                        tenDichVu = ct.DichVu.TenDichVu,
+                        soLuong = ct.SoLuong,
+                        donGia = ct.DonGia,
+                        thanhTien = ct.ThanhTien
+                    })
+                    .ToListAsync();
 
-                var chiTietDichVu = new ChiTietDichVu
-                {
-                    MaDatPhong = model.MaDatPhong,
-                    MaDichVu = model.MaDichVu,
-                    SoLuong = model.SoLuong,
-                    DonGia = dichVu.Gia,
-                    ThanhTien = dichVu.Gia * model.SoLuong
-                };
-                _context.ChiTietDichVus.Add(chiTietDichVu);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { success = true, thanhTien = chiTietDichVu.ThanhTien });
+                return Ok(new { success = true, services });
             }
             catch (Exception ex)
             {
-                return Ok(new { success = false, message = $"Lỗi khi thêm dịch vụ: {ex.Message}" });
+                _logger.LogError(ex, "Lỗi khi tải danh sách dịch vụ phòng: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi tải danh sách dịch vụ phòng: {ex.Message}" });
             }
         }
 
@@ -566,21 +688,21 @@ public async Task<IActionResult> CheckStuckShifts()
         {
             try
             {
-                var datPhong = await _context.DatPhongs
-                    .Include(dp => dp.MaPhongNavigation) // Sửa thành MaPhongNavigation
-                    .ThenInclude(p => p.LoaiPhong)
-                    .Include(dp => dp.ChiTietDichVus)
+                var datPhong = await _context.DatPhong
+                    .Include(dp => dp.Phong) // Sửa từ MaPhongNavigation thành Phong
+                    .ThenInclude(p => p.LoaiPhong) // Sửa từ MaLoaiPhong thành LoaiPhong
+                    .Include(dp => dp.ChiTietDichVu)
                     .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
                 if (datPhong == null)
                     return Ok(new { success = false, message = "Không tìm thấy đặt phòng" });
 
                 var thoiGianO = (DateTime.Now - datPhong.NgayNhanPhong).TotalHours;
-                var loaiPhong = datPhong.MaPhongNavigation.LoaiPhong; // Sửa thành MaPhongNavigation
+                var loaiPhong = datPhong.Phong.LoaiPhong; // Sửa từ MaPhongNavigation thành Phong.LoaiPhong
                 decimal tongTienPhong = thoiGianO <= 24
                     ? (decimal)Math.Ceiling(thoiGianO) * loaiPhong.GiaTheoGio
                     : loaiPhong.GiaTheoNgay;
 
-                var tongTienDichVu = datPhong.ChiTietDichVus?.Sum(ct => ct.ThanhTien) ?? 0;
+                var tongTienDichVu = datPhong.ChiTietDichVu?.Sum(ct => ct.ThanhTien) ?? 0;
                 var tongTien = tongTienPhong + tongTienDichVu;
 
                 datPhong.NgayTraPhong = DateTime.Now;
@@ -588,10 +710,10 @@ public async Task<IActionResult> CheckStuckShifts()
                 datPhong.TongTienTheoThoiGian = tongTienPhong;
                 datPhong.TongTienDichVu = tongTienDichVu;
                 datPhong.TrangThai = "Đã trả phòng";
-                datPhong.MaPhongNavigation.DangSuDung = false; // Sửa thành MaPhongNavigation
+                datPhong.Phong.DangSuDung = false; // Sửa từ MaPhongNavigation thành Phong
 
                 var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-                var caHienTai = await _context.CaLamViecs
+                var caHienTai = await _context.CaLamViec
                     .FirstOrDefaultAsync(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc");
 
                 var hoaDon = new HoaDon
@@ -604,7 +726,7 @@ public async Task<IActionResult> CheckStuckShifts()
                     TrangThaiThanhToan = "Đã thanh toán",
                     LoaiHoaDon = "Tiền phòng"
                 };
-                _context.HoaDons.Add(hoaDon);
+                _context.HoaDon.Add(hoaDon);
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, tongTien = tongTien, tongTienPhong, tongTienDichVu });

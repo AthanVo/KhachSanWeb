@@ -26,8 +26,15 @@ const billingTotal = document.getElementById('billing-total');
 const billingFinal = document.getElementById('billing-final');
 const billingPrepaid = document.getElementById('billing-prepaid');
 
-// Base URL for API
-const BASE_URL = 'http://localhost:5284'; // Thay đổi nếu backend chạy trên port khác
+// Gán sự kiện click cho nút "Đặt phòng"
+document.addEventListener('DOMContentLoaded', function () {
+    const bookRoomBtn = document.getElementById('book-room-btn');
+    if (bookRoomBtn) {
+        bookRoomBtn.addEventListener('click', bookRoom);
+    } else {
+        console.error('Không tìm thấy nút book-room-btn');
+    }
+});
 
 // Logout
 function logout() {
@@ -50,53 +57,84 @@ function scanCCCD() {
 
 // Book Room
 function bookRoom() {
-    const roomId = bookingRoomId.textContent; // Lấy data-room-id (MaPhong)
+    const roomId = bookingRoomId.textContent;
     const bookingType = document.getElementById('booking-type').value;
     const cccdNumber = document.getElementById('cccd-number').value;
     const customerName = document.getElementById('customer-name').value;
     const customerAddress = document.getElementById('customer-address').value;
     const customerNationality = document.getElementById('customer-nationality').value;
 
+    // Kiểm tra các giá trị
+    console.log('Room ID:', roomId);
+    console.log('Booking Type:', bookingType);
+    console.log('CCCD Number:', cccdNumber);
+    console.log('Customer Name:', customerName);
+    console.log('Customer Address:', customerAddress);
+    console.log('Customer Nationality:', customerNationality);
+
+    if (!roomId || isNaN(parseInt(roomId))) {
+        alert('Mã phòng không hợp lệ!');
+        return;
+    }
+
     if (!cccdNumber || !customerName || !customerAddress || !customerNationality) {
         alert('Vui lòng nhập đầy đủ thông tin khách hàng!');
         return;
     }
 
-    console.log('MaPhong gửi lên:', roomId);
+    console.log('Dữ liệu gửi lên:', {
+        MaPhong: parseInt(roomId),
+        LoaiGiayTo: 'CCCD',
+        SoGiayTo: cccdNumber,
+        HoTen: customerName,
+        DiaChi: customerAddress,
+        QuocTich: customerNationality,
+        LoaiDatPhong: bookingType
+    });
 
-    fetch(`${BASE_URL}/api/KhachSanAPI/BookRoom`, {
+    fetch('https://localhost:5284/api/KhachSanAPI/BookRoom', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            maPhong: parseInt(roomId), // Gửi MaPhong (data-room-id)
-            loaiGiayTo: 'CCCD',
-            soGiayTo: cccdNumber,
-            hoTen: customerName,
-            diaChi: customerAddress,
-            quocTich: customerNationality,
-            loaiDatPhong: bookingType
+            MaPhong: parseInt(roomId),
+            LoaiGiayTo: 'CCCD',
+            SoGiayTo: cccdNumber,
+            HoTen: customerName,
+            DiaChi: customerAddress,
+            QuocTich: customerNationality,
+            LoaiDatPhong: bookingType
         }),
         credentials: 'include'
     })
         .then(response => {
+            console.log('Status:', response.status, 'StatusText:', response.statusText);
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.text().then(text => {
+                    console.error('Response body:', text);
+                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${text || response.statusText}`);
+                });
             }
             return response.json();
         })
         .then(data => {
             if (data.success) {
                 const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId);
-                room.classList.add('occupied');
-                room.querySelector('.status').textContent = 'Đang sử dụng';
-                room.querySelector('.door-icon').classList.remove('fa-door-closed');
-                room.querySelector('.door-icon').classList.add('fa-door-open');
-                room.setAttribute('data-customer', customerName);
-                room.setAttribute('data-checkin', new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }));
-                room.setAttribute('data-datphong-id', data.maDatPhong);
-                closeBookingModal();
+                if (room) {
+                    room.classList.add('occupied');
+                    room.querySelector('.status').textContent = 'Đang sử dụng';
+                    room.querySelector('.door-icon').classList.remove('fa-door-closed');
+                    room.querySelector('.door-icon').classList.add('fa-door-open');
+                    room.setAttribute('data-customer', customerName);
+                    room.setAttribute('data-checkin', new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }));
+                    room.setAttribute('data-datphong-id', data.maDatPhong);
+                    closeBookingModal();
+                    alert('Đặt phòng thành công!');
+                } else {
+                    console.error('Không tìm thấy phòng với ID:', roomId);
+                    alert('Có lỗi xảy ra khi cập nhật trạng thái phòng!');
+                }
             } else {
                 alert(data.message || 'Có lỗi khi đặt phòng!');
             }
@@ -107,7 +145,7 @@ function bookRoom() {
                 alert('Bạn cần đăng nhập để đặt phòng!');
                 window.location.href = '/TaiKhoan/DangNhap';
             } else {
-                alert('Đã xảy ra lỗi khi đặt phòng!');
+                alert('Đã xảy ra lỗi khi đặt phòng: ' + error.message);
             }
         });
 }
@@ -116,7 +154,7 @@ function bookRoom() {
 function openServiceModal() {
     const roomId = modalRoomId.textContent;
     serviceRoomId.textContent = roomId;
-    fetch(`${BASE_URL}/api/KhachSanAPI/GetServices`, {
+    fetch('https://localhost:5284/api/KhachSanAPI/GetServices', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -125,6 +163,7 @@ function openServiceModal() {
     })
         .then(response => {
             if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
@@ -166,7 +205,7 @@ function addService() {
         return;
     }
 
-    fetch(`${BASE_URL}/api/KhachSanAPI/AddService`, {
+    fetch('https://localhost:5284/api/KhachSanAPI/AddService', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -180,6 +219,7 @@ function addService() {
     })
         .then(response => {
             if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
@@ -202,6 +242,78 @@ function addService() {
             }
         });
 }
+
+// Add Service
+function addService() {
+    const roomId = serviceRoomId.textContent;
+    const datPhongId = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId)?.getAttribute('data-datphong-id');
+    const serviceSelect = document.getElementById('service-name').value.split('|');
+    const maDichVu = parseInt(serviceSelect[0]);
+    const quantity = parseInt(document.getElementById('service-quantity').value);
+
+    // Kiểm tra dữ liệu trước khi gửi
+    console.log('RoomId:', roomId);
+    console.log('DatPhongId:', datPhongId);
+    console.log('MaDichVu:', maDichVu);
+    console.log('SoLuong:', quantity);
+
+    if (!datPhongId || isNaN(parseInt(datPhongId))) {
+        alert('Không thể thêm dịch vụ vì phòng chưa được đặt!');
+        return;
+    }
+
+    if (isNaN(maDichVu)) {
+        alert('Vui lòng chọn một dịch vụ hợp lệ!');
+        return;
+    }
+
+    if (quantity <= 0) {
+        alert('Số lượng phải lớn hơn 0!');
+        return;
+    }
+
+    fetch('https://localhost:5284/api/KhachSanAPI/AddService', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            maDatPhong: parseInt(datPhongId),
+            maDichVu: maDichVu,
+            soLuong: quantity
+        }),
+        credentials: 'include'
+    })
+        .then(response => {
+            console.log('Status:', response.status, 'StatusText:', response.statusText);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Response body:', text);
+                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${text || response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log(`Đã thêm dịch vụ ${maDichVu} (x${quantity}) cho phòng ${roomId}`);
+                closeServiceModal();
+                alert('Thêm dịch vụ thành công!');
+            } else {
+                alert(data.message || 'Có lỗi khi thêm dịch vụ!');
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi khi thêm dịch vụ:', error);
+            if (error.message.includes('401')) {
+                alert('Bạn cần đăng nhập để thêm dịch vụ!');
+                window.location.href = '/TaiKhoan/DangNhap';
+            } else {
+                alert('Đã xảy ra lỗi khi thêm dịch vụ: ' + error.message);
+            }
+        });
+}
+
 
 // Room Click Events
 rooms.forEach(room => {
@@ -242,14 +354,43 @@ rooms.forEach(room => {
         const datPhongId = room.getAttribute('data-datphong-id');
         const staff = room.getAttribute('data-staff');
         const checkin = room.getAttribute('data-checkin');
-        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0');
+        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0'); // Giá theo giờ
+        const priceDay = parseInt(room.getAttribute('data-price-day') || '0'); // Giá theo ngày
+
+        // Kiểm tra datPhongId
+        console.log('RoomId:', roomId);
+        console.log('DatPhongId:', datPhongId);
+        console.log('Staff:', staff);
+        console.log('Checkin:', checkin);
+        console.log('PriceHour:', priceHour);
+        console.log('PriceDay:', priceDay);
+
+        if (!datPhongId || isNaN(parseInt(datPhongId))) {
+            alert('Không thể tải danh sách dịch vụ vì mã đặt phòng không hợp lệ!');
+            return;
+        }
 
         billingBillId.textContent = datPhongId;
         billingStaff.textContent = staff || 'N/A';
         billingCheckin.textContent = checkin;
         billingCheckout.textContent = new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' });
 
-        fetch(`${BASE_URL}/api/KhachSanAPI/GetRoomServices?maDatPhong=${datPhongId}`, {
+        // Tính toán thời gian sử dụng và tiền phòng
+        const checkinDate = new Date(checkin);
+        const checkoutDate = new Date();
+        const thoiGianO = (checkoutDate - checkinDate) / (1000 * 60 * 60); // Thời gian ở (giờ)
+        let tongTienPhong = 0;
+        let loaiTinhTien = '';
+
+        if (thoiGianO <= 24) {
+            loaiTinhTien = 'Theo giờ';
+            tongTienPhong = Math.ceil(thoiGianO) * priceHour;
+        } else {
+            loaiTinhTien = 'Theo ngày';
+            tongTienPhong = priceDay;
+        }
+
+        fetch(`https://localhost:5284/api/KhachSanAPI/GetRoomServices?maDatPhong=${datPhongId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -257,37 +398,59 @@ rooms.forEach(room => {
             credentials: 'include'
         })
             .then(response => {
+                console.log(`Yêu cầu API: Status ${response.status}, StatusText: ${response.statusText}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.text().then(text => {
+                        console.error('Response body:', text);
+                        throw new Error(`HTTP error! Status: ${response.status}, Message: ${text || response.statusText}`);
+                    });
                 }
                 return response.json();
             })
             .then(data => {
                 billingServices.innerHTML = '';
                 let totalServices = 0;
+
+                // Thêm dòng tiền phòng vào bảng
+                billingServices.innerHTML += `
+                <tr>
+                    <td>-</td>
+                    <td>Tiền phòng (${loaiTinhTien})</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>${Math.ceil(thoiGianO)} giờ</td>
+                    <td>${(loaiTinhTien === 'Theo giờ' ? priceHour : priceDay).toLocaleString()}đ</td>
+                    <td>0%</td>
+                    <td>${tongTienPhong.toLocaleString()}đ</td>
+                    <td>-</td>
+                </tr>
+            `;
+
+                // Thêm các dòng dịch vụ
                 if (data.success && data.services) {
                     data.services.forEach(service => {
                         totalServices += service.thanhTien;
                         billingServices.innerHTML += `
-                            <tr>
-                                <td>${service.maDichVu}</td>
-                                <td>${service.tenDichVu}</td>
-                                <td></td>
-                                <td>Chai</td>
-                                <td>${service.soLuong}</td>
-                                <td>${service.donGia.toLocaleString()}đ</td>
-                                <td>0%</td>
-                                <td>${service.thanhTien.toLocaleString()}đ</td>
-                                <td></td>
-                            </tr>
-                        `;
+                        <tr>
+                            <td>${service.maDichVu}</td>
+                            <td>${service.tenDichVu}</td>
+                            <td>-</td>
+                            <td>Chai</td>
+                            <td>${service.soLuong}</td>
+                            <td>${service.donGia.toLocaleString()}đ</td>
+                            <td>0%</td>
+                            <td>${service.thanhTien.toLocaleString()}đ</td>
+                            <td>-</td>
+                        </tr>
+                    `;
                     });
                 }
+
                 billingTotalServices.textContent = totalServices.toLocaleString('vi-VN') + 'đ';
                 billingDiscount.textContent = '0đ';
-                billingRoomPrice.textContent = priceHour.toLocaleString('vi-VN') + 'đ';
+                billingRoomPrice.textContent = tongTienPhong.toLocaleString('vi-VN') + 'đ';
                 billingServiceFee.textContent = '0đ';
-                const tempTotal = priceHour + totalServices;
+                const tempTotal = tongTienPhong + totalServices;
                 billingTotal.textContent = tempTotal.toLocaleString('vi-VN') + 'đ';
                 billingFinal.textContent = tempTotal.toLocaleString('vi-VN') + 'đ';
                 billingPrepaid.textContent = '0đ';
@@ -302,7 +465,7 @@ rooms.forEach(room => {
                     alert('Bạn cần đăng nhập để tính tiền!');
                     window.location.href = '/TaiKhoan/DangNhap';
                 } else {
-                    alert('Không thể tải danh sách dịch vụ!');
+                    alert('Không thể tải danh sách dịch vụ: ' + error.message);
                 }
             });
     });
@@ -317,7 +480,7 @@ function processPayment() {
         return;
     }
 
-    fetch(`${BASE_URL}/api/KhachSanAPI/ProcessPayment`, {
+    fetch('https://localhost:5284/api/KhachSanAPI/ProcessPayment', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -330,6 +493,7 @@ function processPayment() {
     })
         .then(response => {
             if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
@@ -346,7 +510,7 @@ function processPayment() {
                 billingTotal.textContent = data.tongTien.toLocaleString('vi-VN') + 'đ';
                 billingFinal.textContent = data.tongTien.toLocaleString('vi-VN') + 'đ';
                 alert(`Thanh toán thành công! Tổng tiền: ${data.tongTien.toLocaleString('vi-VN')}đ`);
-                closeBillingModal();
+                
             } else {
                 alert(data.message || 'Có lỗi khi thanh toán!');
             }

@@ -7,29 +7,29 @@ namespace KhachSan.Models
     {
         public int MaPhong { get; set; }
         public string SoPhong { get; set; }
-        public string LoaiPhong { get; set; } // Tên loại phòng (string)
+        public string LoaiPhong { get; set; }
         public decimal GiaTheoGio { get; set; }
-        public decimal GiaTheoNgay { get; set; } // Thêm nếu cần
+        public decimal GiaTheoNgay { get; set; }
         public bool DangSuDung { get; set; }
         public string TrangThai { get; set; }
         public string KhachHang { get; set; }
-        public string MaHoaDon { get; set; }
+        public int? MaHoaDon { get; set; } // Sửa từ string thành int?
         public string NhanVien { get; set; }
-        public string NgayNhanPhong { get; set; }
-        public string HienTrang { get; set; }
+        public DateTime? NgayNhanPhong { get; set; }
+        public string HienTrang { get; set; } // Sửa từ int thành string
         public string MoTa { get; set; }
         public DateTime? ThoiGianTraPhongCuoi { get; set; }
-        // Xóa MaLoaiPhongNavigation vì không cần trong ViewModel
+        public int? MaDatPhong { get; internal set; } // Sửa từ object thành int?
+        public int? MaNhanVien { get; set; }
     }
 
-    // ViewModel for booking a room
     public class DatPhongViewModel
     {
         [Required]
         public int MaPhong { get; set; }
 
         [Required]
-        public string CCCD { get; set; }
+        public string SoGiayTo { get; set; } // Sửa từ CCCD thành SoGiayTo
 
         [Required]
         public string HoTen { get; set; }
@@ -40,24 +40,23 @@ namespace KhachSan.Models
         public string QuocTich { get; set; }
 
         [Required]
-        public string LoaiDat { get; set; } // Theo giờ, Theo ngày, Qua đêm
+        [RegularExpression("^(Theo giờ|Theo ngày|Qua đêm)$", ErrorMessage = "Loại đặt phải là 'Theo giờ', 'Theo ngày' hoặc 'Qua đêm'.")]
+        public string LoaiDat { get; set; }
     }
 
-    // ViewModel for adding service
     public class ThemDichVuViewModel
     {
         [Required]
         public int MaHoaDon { get; set; }
 
         [Required]
-        public string MaDichVu { get; set; }
+        public int MaDichVu { get; set; } // Sửa từ string thành int
 
         [Required]
         [Range(1, 100)]
         public int SoLuong { get; set; }
     }
 
-    // ViewModel for payment
     public class ThanhToanViewModel
     {
         [Required]
@@ -65,12 +64,13 @@ namespace KhachSan.Models
 
         public string GhiChu { get; set; }
 
+        [Range(0, double.MaxValue, ErrorMessage = "Tiền khuyến mãi không được âm.")]
         public decimal TienKhuyenMai { get; set; }
 
+        [Range(0, double.MaxValue, ErrorMessage = "Tiền trả trước không được âm.")]
         public decimal TienTraTruoc { get; set; }
     }
 
-    // ViewModel for creating group
     public class TaoNhomViewModel
     {
         [Required]
@@ -79,23 +79,22 @@ namespace KhachSan.Models
         [Required]
         public string NguoiDaiDien { get; set; }
 
+        [RegularExpression(@"^\d{10,15}$", ErrorMessage = "Số điện thoại phải có từ 10 đến 15 chữ số.")]
         public string SoDienThoai { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Danh sách phòng không được để trống.")]
         public List<int> DanhSachPhong { get; set; }
     }
 
-    // ViewModel for merge bills
     public class GopHoaDonViewModel
     {
         [Required]
         public int MaNhom { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Danh sách phòng không được để trống.")]
         public List<int> DanhSachPhong { get; set; }
     }
 
-    // ViewModel for end shift
     public class KetCaViewModel
     {
         [Required]
@@ -104,7 +103,6 @@ namespace KhachSan.Models
         public string GhiChu { get; set; }
     }
 
-    // ViewModel for room transfer
     public class ChuyenPhongViewModel
     {
         [Required]
@@ -119,7 +117,6 @@ namespace KhachSan.Models
         public string LyDo { get; set; }
     }
 
-    // ViewModel for closing room
     public class DongPhongViewModel
     {
         [Required]
@@ -129,13 +126,12 @@ namespace KhachSan.Models
         public string LyDo { get; set; }
     }
 
-    // ViewModel for bill details
     public class ChiTietHoaDonViewModel
     {
         public int MaHoaDon { get; set; }
         public string TenKhachHang { get; set; }
         public string SoPhong { get; set; }
-        public DateTime NgayNhanPhong { get; set; }
+        public DateTime? NgayNhanPhong { get; set; } // Sửa từ DateTime thành DateTime?
         public decimal TienPhong { get; set; }
         public List<ChiTietDichVuViewModel> DanhSachDichVu { get; set; }
         public decimal TongTienDichVu { get; set; }
@@ -148,12 +144,11 @@ namespace KhachSan.Models
 
     public class ChiTietDichVuViewModel
     {
-        public string MaDichVu { get; set; }
+        public int MaDichVu { get; set; } // Sửa từ string thành int
         public string TenDichVu { get; set; }
         public int SoLuong { get; set; }
         public decimal DonGia { get; set; }
         public decimal ChietKhau { get; set; }
         public decimal ThanhTien { get; set; }
     }
-
 }

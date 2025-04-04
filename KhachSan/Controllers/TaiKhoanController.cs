@@ -21,9 +21,9 @@ namespace KhachSan.Controllers
 {
     public class TaiKhoanController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDBContext _context;
 
-        public TaiKhoanController(ApplicationDbContext context)
+        public TaiKhoanController(ApplicationDBContext context)
         {
             _context = context;
         }
@@ -65,7 +65,7 @@ namespace KhachSan.Controllers
             }
             else
             {
-                var existingUser = _context.NguoiDungs.SingleOrDefault(u => u.TenDangNhap == model.TenDN);
+                var existingUser = _context.NguoiDung.SingleOrDefault(u => u.TenDangNhap == model.TenDN);
                 if (existingUser != null)
                 {
                     ModelState.AddModelError("TenDN", "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.");
@@ -102,7 +102,7 @@ namespace KhachSan.Controllers
             }
             else
             {
-                var existingEmail = _context.NguoiDungs.SingleOrDefault(u => u.Email == model.Email);
+                var existingEmail = _context.NguoiDung.SingleOrDefault(u => u.Email == model.Email);
                 if (existingEmail != null)
                 {
                     ModelState.AddModelError("Email", "Email đã tồn tại. Vui lòng sử dụng email khác.");
@@ -142,7 +142,7 @@ namespace KhachSan.Controllers
                     TrangThai = "Hoạt động"
                 };
 
-                _context.NguoiDungs.Add(nd);
+                _context.NguoiDung.Add(nd);
                 _context.SaveChanges();
 
                 TempData["Success"] = "Đăng ký thành công! Vui lòng đăng nhập.";
@@ -173,7 +173,7 @@ namespace KhachSan.Controllers
             }
 
             // Tìm user theo TenDangNhap
-            var user = _context.NguoiDungs.SingleOrDefault(u => u.TenDangNhap == model.TenDN);
+            var user = _context.NguoiDung.SingleOrDefault(u => u.TenDangNhap == model.TenDN);
 
             // Kiểm tra mật khẩu
             if (user == null || HashPassword(model.MatKhau) != user.MatKhau)
@@ -264,7 +264,7 @@ namespace KhachSan.Controllers
             }
 
             // Tìm người dùng trong DB
-            var user = await _context.NguoiDungs.FindAsync(maNguoiDung);
+            var user = await _context.NguoiDung.FindAsync(maNguoiDung);
             if (user == null)
             {
                 ModelState.AddModelError("", "Người dùng không tồn tại");

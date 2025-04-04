@@ -9,39 +9,47 @@ function formatCurrency(amount) {
 
 // Hàm lấy thông tin người dùng hiện tại
 function fetchCurrentUser() {
-    fetch('http://localhost:5284/api/KhachSanAPI/current-user', {
+    return fetch('https://localhost:5284/api/KhachSanAPI/current-user', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                userRole = data.user.vaiTro; // Cập nhật vai trò
+                userRole = data.user.vaiTro;
             } else {
                 console.error('Lỗi khi lấy thông tin người dùng:', data.message);
             }
         })
         .catch(error => {
             console.error('Lỗi khi lấy thông tin người dùng:', error);
+            window.location.href = '/TaiKhoan/Dangnhap';
         });
 }
 
 // Hàm tải thông tin ca hiện tại
 function fetchCurrentShift() {
     console.log('Đang gọi API để lấy ca hiện tại...');
-    return fetch('http://localhost:5284/api/KhachSanAPI/current-shift', {
+    return fetch('https://localhost:5284/api/KhachSanAPI/current-shift', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
         .then(response => {
             console.log('Phản hồi từ server:', response.status);
             if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
@@ -73,14 +81,20 @@ function fetchCurrentShift() {
 
 // Hàm tải danh sách nhân viên cho ca tiếp theo
 function loadStaffList() {
-    fetch('http://localhost:5284/api/KhachSanAPI/staff/available', {
+    return fetch('https://localhost:5284/api/KhachSanAPI/staff/available', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             const staffSelect = document.getElementById('next-staff');
             staffSelect.innerHTML = '<option value="">-- Không chọn --</option>';
@@ -103,14 +117,20 @@ function loadStaffList() {
 
 // Hàm tải danh sách nhân viên cho dropdown admin-staff (dành cho quản trị viên)
 function loadAdminStaffList() {
-    fetch('http://localhost:5284/api/KhachSanAPI/staff/available', {
+    return fetch('https://localhost:5284/api/KhachSanAPI/staff/available', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             const adminStaffSelect = document.getElementById('admin-staff');
             adminStaffSelect.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
@@ -133,23 +153,29 @@ function loadAdminStaffList() {
 
 // Hàm mở modal kết ca
 function openShiftEndModal() {
-    // Kiểm tra vai trò người dùng
     const adminStaffSection = document.getElementById('admin-staff-selection');
     if (userRole === "Quản trị") {
-        adminStaffSection.style.display = 'block'; // Hiển thị dropdown cho quản trị viên
-        loadAdminStaffList(); // Tải danh sách nhân viên
+        adminStaffSection.style.display = 'block';
+        loadAdminStaffList();
     } else {
-        adminStaffSection.style.display = 'none'; // Ẩn dropdown cho nhân viên thường
+        adminStaffSection.style.display = 'none';
     }
 
-    Promise.all([fetchCurrentShift(), loadStaffList()])
-        .then(() => {
-            document.getElementById('shiftEndModal').style.display = 'block';
+    // Mở modal trước, sau đó tải dữ liệu
+    document.getElementById('shiftEndModal').style.display = 'block';
+
+    Promise.all([
+        fetchCurrentShift().catch(error => {
+            console.error('Lỗi khi tải ca hiện tại:', error);
+            return null;
+        }),
+        loadStaffList().catch(error => {
+            console.error('Lỗi khi tải danh sách nhân viên:', error);
+            return null;
         })
-        .catch(error => {
-            console.error('Lỗi khi tải dữ liệu cho modal:', error);
-            alert('Không thể tải dữ liệu cho modal. Vui lòng thử lại.');
-        });
+    ]).catch(error => {
+        console.error('Lỗi khi tải dữ liệu cho modal:', error);
+    });
 }
 
 // Hàm đóng modal kết ca
@@ -172,15 +198,21 @@ function submitShiftEnd() {
         MaNhanVien: userRole === "Quản trị" && adminStaffSelect.value ? parseInt(adminStaffSelect.value) : null
     };
 
-    fetch('http://localhost:5284/api/KhachSanAPI/end-shift', {
+    fetch('https://localhost:5284/api/KhachSanAPI/end-shift', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
+            'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data)
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(result => {
             if (result.success) {
                 alert(result.message);

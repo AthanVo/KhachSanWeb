@@ -9,14 +9,20 @@ document.addEventListener('DOMContentLoaded', function () {
 function loadNotifications() {
     let maNhanVien = localStorage.getItem('maNhanVien');
     if (!maNhanVien) {
-        fetch('http://localhost:5284/api/KhachSanAPI/current-user', {
+        fetch('https://localhost:5284/api/KhachSanAPI/current-user', {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
-            }
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     maNhanVien = data.user.maNguoiDung;
@@ -45,17 +51,22 @@ function loadNotifications() {
 function continueLoadingNotifications(maNhanVien) {
     console.log("Đang tải thông báo chưa đọc...");
 
-    fetch(`http://localhost:5284/api/KhachSanAPI/notifications/unread`, {
+    fetch(`https://localhost:5284/api/KhachSanAPI/notifications/unread`, {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log("Kết quả thông báo:", data);
-            // Thêm debug logs nếu cần
             console.log("Raw data:", JSON.stringify(data));
             console.log("Notifications data:", data.notifications);
             if (data.notifications && data.notifications.length > 0) {
@@ -73,7 +84,6 @@ function continueLoadingNotifications(maNhanVien) {
                 countElement.textContent = data.unreadCount;
 
                 data.notifications.forEach(notification => {
-                    // Kiểm tra và sử dụng đúng cách đặt tên thuộc tính 
                     const notificationId = notification.MaThongBao || notification.maThongBao;
                     const title = notification.TieuDe || notification.tieuDe;
                     const content = notification.NoiDung || notification.noiDung;
@@ -90,7 +100,6 @@ function continueLoadingNotifications(maNhanVien) {
                     <small>${new Date(time).toLocaleString('vi-VN')}</small>
                 `;
 
-                    // Truyền đúng ID khi click
                     item.addEventListener('click', () => {
                         console.log("Click vào thông báo ID:", notificationId);
                         markAsRead(notificationId, item);
@@ -135,22 +144,25 @@ function toggleNotifications() {
 function markAsRead(maThongBao, element) {
     console.log(`Đánh dấu đã đọc: ${maThongBao}`);
 
-    // Kiểm tra ID trước khi gọi API
     if (!maThongBao) {
         console.error("ID thông báo không hợp lệ:", maThongBao);
         alert("Lỗi: ID thông báo không hợp lệ");
         return;
     }
 
-    fetch(`http://localhost:5284/api/KhachSanAPI/notifications/mark-read/${maThongBao}`, {
+    fetch(`https://localhost:5284/api/KhachSanAPI/notifications/mark-read/${maThongBao}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
         .then(response => {
             console.log("Nhận response:", response.status);
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -159,12 +171,10 @@ function markAsRead(maThongBao, element) {
             if (data.success) {
                 console.log(`Đánh dấu thành công, trạng thái: ${data.status}`);
 
-                // Xóa thông báo khỏi UI
                 if (element && element.parentNode) {
                     element.remove();
                 }
 
-                // Lọc thông báo đã đọc khỏi mảng dữ liệu toàn cục
                 if (notificationsData.length > 0) {
                     notificationsData = notificationsData.filter(notification => {
                         const notificationId = notification.MaThongBao || notification.maThongBao;
@@ -172,11 +182,9 @@ function markAsRead(maThongBao, element) {
                     });
                 }
 
-                // Cập nhật số thông báo chưa đọc
                 const countElement = document.getElementById('notification-count');
                 countElement.textContent = data.unreadCount;
 
-                // Nếu không còn thông báo, hiển thị message
                 const dropdown = document.getElementById('notification-dropdown');
                 if (dropdown && (!dropdown.children.length || dropdown.children.length === 0)) {
                     dropdown.innerHTML = '<p>Không có thông báo mới</p>';
@@ -184,31 +192,35 @@ function markAsRead(maThongBao, element) {
             } else {
                 console.error(`Lỗi: ${data.message}`);
                 alert(data.message || 'Có lỗi xảy ra khi đánh dấu thông báo!');
-                // Tải lại thông báo để đồng bộ UI với server
                 loadNotifications();
             }
         })
         .catch(error => {
             console.error('Lỗi khi đánh dấu thông báo:', error);
             alert('Lỗi khi đánh dấu thông báo!');
-            // Tải lại thông báo để đồng bộ UI với server
             loadNotifications();
         });
 }
 
 function checkStuckShifts() {
-    fetch('http://localhost:5284/api/KhachSanAPI/check-stuck-shifts', {
+    fetch('https://localhost:5284/api/KhachSanAPI/check-stuck-shifts', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 console.log(data.message);
-                loadNotifications(); // Tải lại thông báo sau khi kiểm tra ca bị kẹt
+                loadNotifications();
             } else {
                 console.error('Lỗi khi kiểm tra ca bị kẹt:', data.message);
             }
