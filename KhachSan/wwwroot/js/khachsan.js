@@ -14,6 +14,7 @@ const bookingRoomId = document.getElementById('booking-room-id');
 const serviceRoomId = document.getElementById('service-room-id');
 const billingBillId = document.getElementById('billing-bill-id');
 const billingStaff = document.getElementById('billing-staff');
+const billingStaffId = document.getElementById('billing-staff-id');
 const billingCheckin = document.getElementById('billing-checkin');
 const billingCheckout = document.getElementById('billing-checkout');
 const billingNote = document.getElementById('billing-note');
@@ -353,14 +354,16 @@ rooms.forEach(room => {
         const roomId = room.getAttribute('data-room-id');
         const datPhongId = room.getAttribute('data-datphong-id');
         const staff = room.getAttribute('data-staff');
+        const staffId = room.getAttribute('data-staff-id'); // Lấy MaNhanVien
         const checkin = room.getAttribute('data-checkin');
-        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0'); // Giá theo giờ
-        const priceDay = parseInt(room.getAttribute('data-price-day') || '0'); // Giá theo ngày
+        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0');
+        const priceDay = parseInt(room.getAttribute('data-price-day') || '0');
 
         // Kiểm tra datPhongId
         console.log('RoomId:', roomId);
         console.log('DatPhongId:', datPhongId);
         console.log('Staff:', staff);
+        console.log('StaffId:', staffId);
         console.log('Checkin:', checkin);
         console.log('PriceHour:', priceHour);
         console.log('PriceDay:', priceDay);
@@ -372,6 +375,7 @@ rooms.forEach(room => {
 
         billingBillId.textContent = datPhongId;
         billingStaff.textContent = staff || 'N/A';
+        billingStaffId.textContent = staffId || 'N/A'; // Hiển thị MaNhanVien
         billingCheckin.textContent = checkin;
         billingCheckout.textContent = new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' });
 

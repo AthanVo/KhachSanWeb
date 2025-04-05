@@ -79,6 +79,7 @@
                          data-current="@room.HienTrang"
                          data-bill-id="@room.MaHoaDon"
                          data-staff="@room.NhanVien"
+                         data-staff-id="@room.MaNhanVien"
                          data-checkin="@room.NgayNhanPhong"
                          data-datphong-id="@room.MaDatPhong"> <!-- Thêm data-datphong-id -->
                         <div class="content">
@@ -168,9 +169,9 @@
             <div class="info">
                 <p>Mã hóa đơn: <span id="billing-bill-id"></span></p>
                 <p>Tên NV mở phòng:<span id="billing-staff"></span></p>
-                <p>Mã NV mở phòng: NV01</p>
+                <p>Mã NV mở phòng: <span id="billing-staff-id"></span></p>
                 <p>Tên NV tính tiền:  @Context.Session.GetString("HoTen")</p>
-                <p>Mã NV tính tiền: NV01</p>
+                <p>Mã NV tính tiền: @Context.Session.GetInt32("NguoiDungId")</p>
                 <p>Thời gian nhận phòng: <span id="billing-checkin"></span></p>
                 <p>Thời gian trả phòng: <span id="billing-checkout"></span></p>
                 <p>Ghi chú: <input type="text" id="billing-note" placeholder="Ghi chú" style="width: 100%; padding: 5px;"></p>
