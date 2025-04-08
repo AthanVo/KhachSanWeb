@@ -66,7 +66,8 @@ function fetchCurrentShift() {
                     ? thoiGianBatDau.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
                     : 'N/A';
                 document.getElementById('shift-end').textContent = new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
-                document.getElementById('shift-total').textContent = formatCurrency(data.shift.tongTienTrongCa || 0);
+                // Sử dụng tongTienHoaDon thay vì tongTienTrongCa
+                document.getElementById('shift-total').textContent = formatCurrency(data.tongTienHoaDon || 0);
                 document.getElementById('shift-transfer').textContent = formatCurrency(data.shift.tongTienChuyenGiao || 0);
             } else {
                 console.error('Lỗi từ API:', data.message);
@@ -191,7 +192,7 @@ function submitShiftEnd() {
     const transfer = parseFloat((document.getElementById('shift-transfer').textContent || '0').replace(/[^\d.-]/g, ''));
 
     const data = {
-        TongTienTrongCa: total,
+        TongTienTrongCa: total, // Tổng tiền thực tế từ hóa đơn
         TongTienChuyenGiao: nextStaffSelect.value ? transfer : 0,
         GhiChu: document.getElementById('shift-note').value,
         MaNhanVienCaTiepTheo: nextStaffSelect.value ? parseInt(nextStaffSelect.value) : null,

@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"]</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/css/khachsan.css" asp-append-version="true" />
 </head>
 <body>
@@ -41,15 +41,13 @@
         <div class="sidebar">
             <h3>Thông tin chi tiết</h3>
             <div class="stats">
+
                 <p>Tổng doanh thu: <span class="highlight" id="total-revenue">0</span></p>
                 <p>Tổng số khách: <span class="highlight" id="total-customers">0</span></p>
                 <p>Tổng số phòng: <span class="highlight" id="total-rooms">0</span></p>
                 <p>Phòng đang sử dụng: <span class="highlight" id="occupied-rooms">0</span></p>
                 <p>Phòng trống: <span class="highlight" id="available-rooms">0</span></p>
                 <p>Phòng chờ thanh toán: <span class="highlight" id="pending-payment">0</span></p>
-                <p>Phòng chờ nhận: <span class="highlight" id="pending-checkin">0</span></p>
-                <p>Phòng chờ trả: <span class="highlight" id="pending-checkout">0</span></p>
-                <p>Phòng chờ đặt: <span class="highlight" id="pending-booking">0</span></p>
             </div>
         </div>
 
@@ -66,7 +64,7 @@
                 {
                     var isOccupied = room.DangSuDung ? "occupied" : ""; // Class occupied nếu phòng đang sử dụng
                     var doorIcon = room.DangSuDung ? "fa-door-open" : "fa-door-closed"; // Icon cửa mở/đóng
-                    var priceFormatted = (room.GiaTheoGio / 1000).ToString("N0") +  "Ngàn"; 
+                    var priceFormatted = (room.GiaTheoGio / 1000).ToString("N0") + "K"; 
 
                     <div class="room @isOccupied"
                          data-room-id="@room.MaPhong"
@@ -314,6 +312,7 @@
     <script src ="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src ="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/khachsan.js"></script>
-    
+    <script src="~/js/ketca.js"></script>
+    <script src="~/js/thongbao.js"></script>
 </body>
 </html>

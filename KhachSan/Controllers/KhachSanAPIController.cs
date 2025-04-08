@@ -13,8 +13,8 @@ namespace KhachSan.Controllers
     public class KhachSanAPIController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-
         private readonly ILogger<KhachSanAPIController> _logger;
+
         public KhachSanAPIController(ApplicationDBContext context, ILogger<KhachSanAPIController> logger)
         {
             _context = context;
@@ -29,12 +29,7 @@ namespace KhachSan.Controllers
                 .Where(n => n.MaNguoiDung != maNhanVien
                          && (n.VaiTro == "Nhân viên" || n.VaiTro == "Quản trị")
                          && n.TrangThai == "Hoạt động")
-                .Select(n => new
-                {
-                    MaNguoiDung = n.MaNguoiDung,
-                    HoTen = n.HoTen,
-                    SoDienThoai = n.SoDienThoai
-                })
+                .Select(n => new { MaNguoiDung = n.MaNguoiDung, HoTen = n.HoTen, SoDienThoai = n.SoDienThoai })
                 .ToListAsync();
 
             return Ok(new { success = true, nhanViens = staffList });
@@ -44,7 +39,6 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> GetCurrentShift()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
             var caHienTai = await _context.CaLamViec
                 .Where(c => c.MaNhanVien == maNhanVien && c.TrangThai == "Đang làm việc")
                 .OrderByDescending(c => c.ThoiGianBatDau)
@@ -59,20 +53,13 @@ namespace KhachSan.Controllers
                 .FirstOrDefaultAsync();
 
             if (caHienTai == null)
-            {
                 return Ok(new { success = false, message = "Bạn chưa bắt đầu ca làm việc!" });
-            }
 
             var nhanViens = await _context.NguoiDung
                 .Where(nv => (nv.VaiTro == "Nhân viên" || nv.VaiTro == "Quản trị")
                           && nv.MaNguoiDung != maNhanVien
                           && nv.TrangThai == "Hoạt động")
-                .Select(nv => new
-                {
-                    MaNguoiDung = nv.MaNguoiDung,
-                    HoTen = nv.HoTen,
-                    SoDienThoai = nv.SoDienThoai
-                })
+                .Select(nv => new { MaNguoiDung = nv.MaNguoiDung, HoTen = nv.HoTen, SoDienThoai = nv.SoDienThoai })
                 .ToListAsync();
 
             var tongTienHoaDon = await _context.HoaDon
@@ -93,20 +80,14 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> EndShift([FromBody] EndShiftModel model)
         {
             if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int maNhanVien))
-            {
                 return Unauthorized(new { success = false, message = "Không xác định được nhân viên." });
-            }
 
             if (model == null || model.TongTienTrongCa < 0 || model.TongTienChuyenGiao < 0)
-            {
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
-            }
 
             var user = await _context.NguoiDung.FindAsync(maNhanVien);
             if (user == null)
-            {
                 return Ok(new { success = false, message = "Không tìm thấy thông tin nhân viên!" });
-            }
 
             CaLamViec caHienTai = null;
             if (user.VaiTro == "Quản trị" && model.MaNhanVien.HasValue)
@@ -117,16 +98,11 @@ namespace KhachSan.Controllers
                     .FirstOrDefaultAsync();
 
                 if (caHienTai == null)
-                {
                     return Ok(new { success = false, message = "Không tìm thấy ca làm việc đang hoạt động cho nhân viên được chọn!" });
-                }
 
-                // Kiểm tra trạng thái nhân viên (thay thế logic của trigger)
                 var nhanVien = await _context.NguoiDung.FindAsync(model.MaNhanVien.Value);
                 if (nhanVien == null || nhanVien.TrangThai != "Hoạt động")
-                {
                     return Ok(new { success = false, message = "Nhân viên không ở trạng thái hoạt động!" });
-                }
             }
             else
             {
@@ -136,15 +112,10 @@ namespace KhachSan.Controllers
                     .FirstOrDefaultAsync();
 
                 if (caHienTai == null)
-                {
                     return Ok(new { success = false, message = "Không tìm thấy ca làm việc đang hoạt động!" });
-                }
 
-                // Kiểm tra trạng thái nhân viên
                 if (user.TrangThai != "Hoạt động")
-                {
                     return Ok(new { success = false, message = "Nhân viên không ở trạng thái hoạt động!" });
-                }
             }
 
             using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -163,9 +134,7 @@ namespace KhachSan.Controllers
                                                     && (nv.VaiTro == "Nhân viên" || nv.VaiTro == "Quản trị")
                                                     && nv.TrangThai == "Hoạt động");
                         if (nhanVienTiepTheo == null)
-                        {
                             return Ok(new { success = false, message = "Nhân viên ca tiếp theo không hợp lệ!" });
-                        }
 
                         caHienTai.MaNhanVienCaTiepTheo = model.MaNhanVienCaTiepTheo;
                         caHienTai.TongTienChuyenGiao = model.TongTienChuyenGiao;
@@ -220,36 +189,15 @@ namespace KhachSan.Controllers
             }
         }
 
-
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {
-            var totalRevenue = await _context.HoaDon
-                .Where(hd => hd.TrangThaiThanhToan == "Đã thanh toán")
-                .SumAsync(hd => hd.TongTien);
-
-            var totalCustomers = await _context.KhachHangLuuTru
-                .CountAsync();
-
-            var totalRooms = await _context.Phong
-                .CountAsync();
-
-            var occupiedRooms = await _context.Phong
-                .CountAsync(p => p.DangSuDung == true);
-
+            var totalRevenue = await _context.HoaDon.Where(hd => hd.TrangThaiThanhToan == "Đã thanh toán").SumAsync(hd => hd.TongTien);
+            var totalCustomers = await _context.KhachHangLuuTru.CountAsync();
+            var totalRooms = await _context.Phong.CountAsync();
+            var occupiedRooms = await _context.Phong.CountAsync(p => p.DangSuDung == true);
             var availableRooms = totalRooms - occupiedRooms;
-
-            var pendingPayment = await _context.DatPhong
-                .CountAsync(dp => dp.TrangThaiThanhToan == "Chưa thanh toán");
-
-            var pendingCheckin = await _context.DatPhong
-                .CountAsync(dp => dp.TrangThai == "Chờ xác nhận");
-
-            var pendingCheckout = await _context.DatPhong
-                .CountAsync(dp => dp.TrangThai == "Đã nhận phòng");
-
-            var pendingBooking = await _context.DatPhong
-                .CountAsync(dp => dp.TrangThai == "Chờ xác nhận");
+            var pendingPayment = await _context.DatPhong.CountAsync(dp => dp.TrangThaiThanhToan == "Chưa thanh toán");
 
             var stats = new
             {
@@ -259,31 +207,23 @@ namespace KhachSan.Controllers
                 OccupiedRooms = occupiedRooms,
                 AvailableRooms = availableRooms,
                 PendingPayment = pendingPayment,
-                PendingCheckin = pendingCheckin,
-                PendingCheckout = pendingCheckout,
-                PendingBooking = pendingBooking
+                
             };
 
             return Ok(stats);
         }
+
         [HttpGet("current-user")]
         public async Task<IActionResult> GetCurrentUser()
         {
             var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var user = await _context.NguoiDung
                 .Where(n => n.MaNguoiDung == maNhanVien)
-                .Select(n => new
-                {
-                    MaNguoiDung = n.MaNguoiDung,
-                    HoTen = n.HoTen,
-                    VaiTro = n.VaiTro
-                })
+                .Select(n => new { MaNguoiDung = n.MaNguoiDung, HoTen = n.HoTen, VaiTro = n.VaiTro })
                 .FirstOrDefaultAsync();
 
             if (user == null)
-            {
                 return Ok(new { success = false, message = "Không tìm thấy thông tin người dùng!" });
-            }
 
             return Ok(new { success = true, user });
         }
@@ -292,18 +232,14 @@ namespace KhachSan.Controllers
         public async Task<IActionResult> CheckStuckShifts()
         {
             var stuckShifts = await _context.CaLamViec
-                .Where(c => c.TrangThai == "Đang làm việc"
-                         && c.ThoiGianBatDau < DateTime.Now.AddHours(-24))
+                .Where(c => c.TrangThai == "Đang làm việc" && c.ThoiGianBatDau < DateTime.Now.AddHours(-24))
                 .ToListAsync();
 
             foreach (var shift in stuckShifts)
             {
                 var nhanVien = await _context.NguoiDung.FindAsync(shift.MaNhanVien);
-                var quanTris = await _context.NguoiDung
-                    .Where(nv => nv.VaiTro == "Quản trị")
-                    .ToListAsync();
+                var quanTris = await _context.NguoiDung.Where(nv => nv.VaiTro == "Quản trị").ToListAsync();
 
-                // Gửi thông báo cho tất cả quản trị viên
                 foreach (var quanTri in quanTris)
                 {
                     var thongBaoQuanTri = new ThongBao
@@ -319,10 +255,9 @@ namespace KhachSan.Controllers
                     await _context.ThongBao.AddAsync(thongBaoQuanTri);
                 }
 
-                // Gửi thông báo cho nhân viên bị kẹt ca
                 var thongBaoNhanVien = new ThongBao
                 {
-                    MaNguoiGui = null, // Hệ thống gửi
+                    MaNguoiGui = null,
                     MaNguoiNhan = shift.MaNhanVien,
                     TieuDe = "Ca làm việc của bạn bị kẹt",
                     NoiDung = $"Ca làm việc của bạn (Mã ca: {shift.MaCaLamViec}) đã ở trạng thái 'Đang làm việc' quá 24 giờ. Vui lòng kết thúc ca!",
@@ -347,7 +282,7 @@ namespace KhachSan.Controllers
                 .Select(tb => new
                 {
                     Id = tb.MaThongBao,
-                    Sender = tb.NguoiGui != null ? tb.NguoiGui.HoTen : "Hệ thống", // Sửa từ MaNguoiGuiNavigation thành NguoiGui
+                    Sender = tb.NguoiGui != null ? tb.NguoiGui.HoTen : "Hệ thống",
                     Title = tb.TieuDe,
                     Content = tb.NoiDung,
                     Type = tb.LoaiThongBao,
@@ -357,13 +292,9 @@ namespace KhachSan.Controllers
                 .ToListAsync();
 
             var unreadCount = notifications.Count(n => n.Status == "Chưa đọc");
-            return Ok(new
-            {
-                success = true,
-                notifications,
-                unreadCount
-            });
+            return Ok(new { success = true, notifications, unreadCount });
         }
+
         [HttpGet("notifications/unread")]
         public async Task<IActionResult> GetUnreadNotifications()
         {
@@ -383,42 +314,28 @@ namespace KhachSan.Controllers
                 .ToListAsync();
 
             var unreadCount = notifications.Count;
-
             return Ok(new { success = true, notifications, unreadCount });
         }
 
         [HttpPost("notifications/mark-read/{maThongBao}")]
         public async Task<IActionResult> MarkNotificationAsRead(int maThongBao)
         {
-            Console.WriteLine($"Received request to mark as read: {maThongBao}");
             try
             {
                 var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-                Console.WriteLine($"Đánh dấu đã đọc: maThongBao={maThongBao}, maNhanVien={maNhanVien}");
                 _logger.LogInformation("Đánh dấu đã đọc: maThongBao={MaThongBao}, maNhanVien={MaNhanVien}", maThongBao, maNhanVien);
 
                 var thongBao = await _context.ThongBao
                     .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao && t.MaNguoiNhan == maNhanVien);
 
                 if (thongBao == null)
-                {
-                    Console.WriteLine("Không tìm thấy thông báo");
                     return Ok(new { success = false, message = "Không tìm thấy thông báo!" });
-                }
 
-                // Chỉ cập nhật nếu thực sự là "Chưa đọc"
                 if (thongBao.TrangThai == "Chưa đọc")
                 {
-                    Console.WriteLine($"Tìm thấy thông báo: {thongBao.TieuDe}, trạng thái hiện tại: {thongBao.TrangThai}");
                     thongBao.TrangThai = "Đã đọc";
                     _context.Entry(thongBao).State = EntityState.Modified;
-                    var result = await _context.SaveChangesAsync();
-                    Console.WriteLine($"Số bản ghi được cập nhật: {result}");
-
-                    // Kiểm tra lại sau khi lưu
-                    var updatedNotification = await _context.ThongBao
-                        .FirstOrDefaultAsync(t => t.MaThongBao == maThongBao);
-                    Console.WriteLine($"Trạng thái sau khi lưu: {updatedNotification?.TrangThai}");
+                    await _context.SaveChangesAsync();
 
                     var unreadCount = await _context.ThongBao
                         .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
@@ -428,41 +345,36 @@ namespace KhachSan.Controllers
                         success = true,
                         message = "Đã đánh dấu thông báo là đã đọc!",
                         unreadCount,
-                        status = updatedNotification?.TrangThai
-                    });
-                }
-                else
-                {
-                    Console.WriteLine($"Thông báo đã được đánh dấu đọc từ trước");
-
-                    var unreadCount = await _context.ThongBao
-                        .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
-
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Thông báo đã được đánh dấu đọc từ trước!",
-                        unreadCount,
                         status = thongBao.TrangThai
                     });
                 }
+
+                var unreadCountExisting = await _context.ThongBao
+                    .CountAsync(t => t.MaNguoiNhan == maNhanVien && t.TrangThai == "Chưa đọc");
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Thông báo đã được đánh dấu đọc từ trước!",
+                    unreadCount = unreadCountExisting,
+                    status = thongBao.TrangThai
+                });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi: {ex.Message}");
                 return Ok(new { success = false, message = $"Lỗi: {ex.Message}" });
             }
         }
 
         public class BookRoomModel
         {
-            public int MaPhong { get; set; } // Thay SoPhong bằng MaPhong
+            public int MaPhong { get; set; }
             public string LoaiGiayTo { get; set; }
             public string SoGiayTo { get; set; }
             public string HoTen { get; set; }
             public string DiaChi { get; set; }
             public string QuocTich { get; set; }
-            public string LoaiDatPhong { get; set; }
+            public string LoaiDatPhong { get; set; } // "Theo giờ" hoặc "Theo ngày"
         }
 
         [HttpPost("BookRoom")]
@@ -470,7 +382,7 @@ namespace KhachSan.Controllers
         {
             try
             {
-                if (model == null || model.MaPhong <= 0)
+                if (model == null || model.MaPhong <= 0 || string.IsNullOrEmpty(model.LoaiDatPhong))
                     return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ" });
 
                 _logger.LogInformation($"Đang kiểm tra phòng với MaPhong: {model.MaPhong}");
@@ -511,9 +423,7 @@ namespace KhachSan.Controllers
                 }
 
                 if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int maNhanVien))
-                {
                     return Unauthorized(new { success = false, message = "Không xác định được nhân viên" });
-                }
 
                 var datPhong = new DatPhong
                 {
@@ -521,7 +431,8 @@ namespace KhachSan.Controllers
                     MaKhachHangLuuTru = khachHang.MaKhachHangLuuTru,
                     MaNhanVien = maNhanVien,
                     NgayNhanPhong = DateTime.Now,
-                    TrangThai = "Đã nhận phòng"
+                    TrangThai = "Đã nhận phòng",
+                    LoaiDatPhong = model.LoaiDatPhong // Lưu LoaiDatPhong
                 };
                 _context.DatPhong.Add(datPhong);
                 phong.DangSuDung = true;
@@ -537,6 +448,30 @@ namespace KhachSan.Controllers
             }
         }
 
+        [HttpGet("GetBookingDetails/{maDatPhong}")]
+        public async Task<IActionResult> GetBookingDetails(int maDatPhong)
+        {
+            try
+            {
+                var datPhong = await _context.DatPhong
+                    .FirstOrDefaultAsync(dp => dp.MaDatPhong == maDatPhong);
+                if (datPhong == null)
+                    return NotFound(new { success = false, message = "Không tìm thấy đặt phòng" });
+
+                return Ok(new
+                {
+                    success = true,
+                    maDatPhong = datPhong.MaDatPhong,
+                    loaiDatPhong = datPhong.LoaiDatPhong ?? "Theo giờ" // Giá trị mặc định nếu NULL
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy chi tiết đặt phòng: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi lấy chi tiết đặt phòng: {ex.Message}" });
+            }
+        }
+
         [HttpGet("GetServices")]
         [Authorize(Roles = "Nhân viên, Quản trị")]
         public async Task<IActionResult> GetServices()
@@ -544,13 +479,8 @@ namespace KhachSan.Controllers
             try
             {
                 var services = await _context.DichVu
-                    .Where(d => d.TrangThai == "Hoạt động") // Chỉ lấy các dịch vụ đang hoạt động
-                    .Select(d => new
-                    {
-                        maDichVu = d.MaDichVu,
-                        tenDichVu = d.TenDichVu,
-                        gia = d.Gia
-                    })
+                    .Where(d => d.TrangThai == "Hoạt động")
+                    .Select(d => new { maDichVu = d.MaDichVu, tenDichVu = d.TenDichVu, gia = d.Gia })
                     .ToListAsync();
 
                 return Ok(new { success = true, services });
@@ -568,27 +498,18 @@ namespace KhachSan.Controllers
         {
             try
             {
-                if (model == null)
-                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Model rỗng" });
-
-                if (model.MaDatPhong <= 0)
-                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Mã đặt phòng không hợp lệ" });
-
-                if (model.MaDichVu <= 0)
-                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Mã dịch vụ không hợp lệ" });
-
-                if (model.SoLuong <= 0)
-                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: Số lượng phải lớn hơn 0" });
+                if (model == null || model.MaDatPhong <= 0 || model.MaDichVu <= 0 || model.SoLuong <= 0)
+                    return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ" });
 
                 var datPhong = await _context.DatPhong
                     .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
                 if (datPhong == null)
-                    return BadRequest(new { success = false, message = $"Không tìm thấy đặt phòng với MaDatPhong = {model.MaDatPhong} hoặc đặt phòng không ở trạng thái 'Đã nhận phòng'" });
+                    return BadRequest(new { success = false, message = $"Không tìm thấy đặt phòng với MaDatPhong = {model.MaDatPhong}" });
 
                 var dichVu = await _context.DichVu
                     .FirstOrDefaultAsync(d => d.MaDichVu == model.MaDichVu && d.TrangThai == "Hoạt động");
                 if (dichVu == null)
-                    return BadRequest(new { success = false, message = $"Dịch vụ với MaDichVu = {model.MaDichVu} không tồn tại hoặc không ở trạng thái 'Hoạt động'" });
+                    return BadRequest(new { success = false, message = $"Dịch vụ với MaDichVu = {model.MaDichVu} không tồn tại" });
 
                 var chiTietDichVu = new ChiTietDichVu
                 {
@@ -626,9 +547,7 @@ namespace KhachSan.Controllers
                 .Include(p => p.LoaiPhong)
                 .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
             if (phong == null)
-            {
                 return NotFound(new { success = false, message = "Phòng không tồn tại" });
-            }
 
             return Ok(new
             {
@@ -637,7 +556,7 @@ namespace KhachSan.Controllers
                 soPhong = phong.SoPhong,
                 dangSuDung = phong.DangSuDung,
                 giaTheoGio = phong.LoaiPhong.GiaTheoGio,
-                giaTheoNgay = phong.LoaiPhong.GiaTheoNgay
+                giaTheoPrompt = phong.LoaiPhong.GiaTheoNgay
             });
         }
 
@@ -653,7 +572,7 @@ namespace KhachSan.Controllers
                 var datPhong = await _context.DatPhong
                     .FirstOrDefaultAsync(dp => dp.MaDatPhong == maDatPhong && dp.TrangThai == "Đã nhận phòng");
                 if (datPhong == null)
-                    return NotFound(new { success = false, message = "Không tìm thấy đặt phòng hoặc đặt phòng không ở trạng thái 'Đã nhận phòng'" });
+                    return NotFound(new { success = false, message = "Không tìm thấy đặt phòng" });
 
                 var services = await _context.ChiTietDichVu
                     .Where(ct => ct.MaDatPhong == maDatPhong)
@@ -687,9 +606,7 @@ namespace KhachSan.Controllers
                     .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
 
                 if (phong == null)
-                {
                     return NotFound(new { success = false, message = "Phòng không tồn tại" });
-                }
 
                 return Ok(new
                 {
@@ -730,9 +647,13 @@ namespace KhachSan.Controllers
 
                 var thoiGianO = (DateTime.Now - datPhong.NgayNhanPhong).TotalHours;
                 var loaiPhong = datPhong.Phong.LoaiPhong;
-                decimal tongTienPhong = thoiGianO <= 24
-                    ? (decimal)Math.Ceiling(thoiGianO) * loaiPhong.GiaTheoGio
-                    : loaiPhong.GiaTheoNgay;
+                decimal tongTienPhong;
+
+                // Tính tiền dựa trên LoaiDatPhong
+                if (datPhong.LoaiDatPhong == "Theo ngày")
+                    tongTienPhong = loaiPhong.GiaTheoNgay; // Giá cố định theo ngày
+                else // Theo giờ
+                    tongTienPhong = (decimal)Math.Ceiling(thoiGianO) * loaiPhong.GiaTheoGio; // Giá giờ x số giờ
 
                 var tongTienDichVu = datPhong.ChiTietDichVu?.Sum(ct => ct.ThanhTien) ?? 0;
                 var tongTien = tongTienPhong + tongTienDichVu;
@@ -763,7 +684,6 @@ namespace KhachSan.Controllers
                 _context.HoaDon.Add(hoaDon);
                 await _context.SaveChangesAsync();
 
-                // Log để kiểm tra
                 _logger.LogInformation($"Đã tạo hóa đơn: MaHoaDon = {hoaDon.MaHoaDon}, TrangThaiThanhToan = {hoaDon.TrangThaiThanhToan}");
                 _logger.LogInformation($"Đã cập nhật DatPhong: MaDatPhong = {datPhong.MaDatPhong}, TrangThaiThanhToan = {datPhong.TrangThaiThanhToan}");
 
@@ -773,8 +693,8 @@ namespace KhachSan.Controllers
                     tongTien = tongTien,
                     tongTienPhong,
                     tongTienDichVu,
-                    datPhongTrangThaiThanhToan = datPhong.TrangThaiThanhToan, // Trả về trạng thái của DatPhong
-                    hoaDonTrangThaiThanhToan = hoaDon.TrangThaiThanhToan // Trả về trạng thái của HoaDon
+                    datPhongTrangThaiThanhToan = datPhong.TrangThaiThanhToan,
+                    hoaDonTrangThaiThanhToan = hoaDon.TrangThaiThanhToan
                 });
             }
             catch (Exception ex)
@@ -783,5 +703,14 @@ namespace KhachSan.Controllers
                 return StatusCode(500, new { success = false, message = $"Lỗi khi thanh toán: {ex.Message}" });
             }
         }
+    }
+
+    public class EndShiftModel
+    {
+        public int? MaNhanVien { get; set; }
+        public decimal TongTienTrongCa { get; set; }
+        public decimal TongTienChuyenGiao { get; set; }
+        public int? MaNhanVienCaTiepTheo { get; set; }
+        public string GhiChu { get; set; }
     }
 }

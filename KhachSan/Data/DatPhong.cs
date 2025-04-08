@@ -23,6 +23,7 @@ public partial class DatPhong
     public string? TrangThaiThanhToan { get; set; }
     public DateTime NgayTao { get; set; }
     public DateTime NgayCapNhat { get; set; }
+    public string LoaiDatPhong { get; set; }
 
     // Navigation properties
     public virtual NhomDatPhong? NhomDatPhong { get; set; }
