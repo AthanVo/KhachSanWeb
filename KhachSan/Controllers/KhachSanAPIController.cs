@@ -219,7 +219,7 @@ namespace KhachSan.Controllers
                 }
             }
         }
-        
+
 
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
@@ -289,53 +289,53 @@ namespace KhachSan.Controllers
         }
 
         [HttpGet("check-stuck-shifts")]
-public async Task<IActionResult> CheckStuckShifts()
-{
-    var stuckShifts = await _context.CaLamViec
-        .Where(c => c.TrangThai == "Đang làm việc"
-                 && c.ThoiGianBatDau < DateTime.Now.AddHours(-24))
-        .ToListAsync();
-
-    foreach (var shift in stuckShifts)
-    {
-        var nhanVien = await _context.NguoiDung.FindAsync(shift.MaNhanVien);
-        var quanTris = await _context.NguoiDung
-            .Where(nv => nv.VaiTro == "Quản trị")
-            .ToListAsync();
-
-        // Gửi thông báo cho tất cả quản trị viên
-        foreach (var quanTri in quanTris)
+        public async Task<IActionResult> CheckStuckShifts()
         {
-            var thongBaoQuanTri = new ThongBao
+            var stuckShifts = await _context.CaLamViec
+                .Where(c => c.TrangThai == "Đang làm việc"
+                         && c.ThoiGianBatDau < DateTime.Now.AddHours(-24))
+                .ToListAsync();
+
+            foreach (var shift in stuckShifts)
             {
-                MaNguoiGui = shift.MaNhanVien,
-                MaNguoiNhan = quanTri.MaNguoiDung,
-                TieuDe = "Ca làm việc bị kẹt",
-                NoiDung = $"Ca làm việc của nhân viên {nhanVien.HoTen} (Mã ca: {shift.MaCaLamViec}) đã ở trạng thái 'Đang làm việc' quá 24 giờ. Vui lòng kiểm tra!",
-                LoaiThongBao = "Cảnh báo",
-                ThoiGianGui = DateTime.Now,
-                TrangThai = "Chưa đọc"
-            };
-            await _context.ThongBao.AddAsync(thongBaoQuanTri);
+                var nhanVien = await _context.NguoiDung.FindAsync(shift.MaNhanVien);
+                var quanTris = await _context.NguoiDung
+                    .Where(nv => nv.VaiTro == "Quản trị")
+                    .ToListAsync();
+
+                // Gửi thông báo cho tất cả quản trị viên
+                foreach (var quanTri in quanTris)
+                {
+                    var thongBaoQuanTri = new ThongBao
+                    {
+                        MaNguoiGui = shift.MaNhanVien,
+                        MaNguoiNhan = quanTri.MaNguoiDung,
+                        TieuDe = "Ca làm việc bị kẹt",
+                        NoiDung = $"Ca làm việc của nhân viên {nhanVien.HoTen} (Mã ca: {shift.MaCaLamViec}) đã ở trạng thái 'Đang làm việc' quá 24 giờ. Vui lòng kiểm tra!",
+                        LoaiThongBao = "Cảnh báo",
+                        ThoiGianGui = DateTime.Now,
+                        TrangThai = "Chưa đọc"
+                    };
+                    await _context.ThongBao.AddAsync(thongBaoQuanTri);
+                }
+
+                // Gửi thông báo cho nhân viên bị kẹt ca
+                var thongBaoNhanVien = new ThongBao
+                {
+                    MaNguoiGui = null, // Hệ thống gửi
+                    MaNguoiNhan = shift.MaNhanVien,
+                    TieuDe = "Ca làm việc của bạn bị kẹt",
+                    NoiDung = $"Ca làm việc của bạn (Mã ca: {shift.MaCaLamViec}) đã ở trạng thái 'Đang làm việc' quá 24 giờ. Vui lòng kết thúc ca!",
+                    LoaiThongBao = "Cảnh báo",
+                    ThoiGianGui = DateTime.Now,
+                    TrangThai = "Chưa đọc"
+                };
+                await _context.ThongBao.AddAsync(thongBaoNhanVien);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true, message = "Đã kiểm tra các ca bị kẹt!" });
         }
-
-        // Gửi thông báo cho nhân viên bị kẹt ca
-        var thongBaoNhanVien = new ThongBao
-        {
-            MaNguoiGui = null, // Hệ thống gửi
-            MaNguoiNhan = shift.MaNhanVien,
-            TieuDe = "Ca làm việc của bạn bị kẹt",
-            NoiDung = $"Ca làm việc của bạn (Mã ca: {shift.MaCaLamViec}) đã ở trạng thái 'Đang làm việc' quá 24 giờ. Vui lòng kết thúc ca!",
-            LoaiThongBao = "Cảnh báo",
-            ThoiGianGui = DateTime.Now,
-            TrangThai = "Chưa đọc"
-        };
-        await _context.ThongBao.AddAsync(thongBaoNhanVien);
-    }
-
-    await _context.SaveChangesAsync();
-    return Ok(new { success = true, message = "Đã kiểm tra các ca bị kẹt!" });
-}
 
         [HttpGet("Notifications")]
         public async Task<IActionResult> GetNotifications()
@@ -620,26 +620,26 @@ public async Task<IActionResult> CheckStuckShifts()
         }
 
         [HttpGet("GetRoom/{maPhong}")]
-public async Task<IActionResult> GetRoom(int maPhong)
-{
-    var phong = await _context.Phong
-        .Include(p => p.LoaiPhong)
-        .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
-    if (phong == null)
-    {
-        return NotFound(new { success = false, message = "Phòng không tồn tại" });
-    }
+        public async Task<IActionResult> GetRoom(int maPhong)
+        {
+            var phong = await _context.Phong
+                .Include(p => p.LoaiPhong)
+                .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
+            if (phong == null)
+            {
+                return NotFound(new { success = false, message = "Phòng không tồn tại" });
+            }
 
-    return Ok(new
-    {
-        success = true,
-        maPhong = phong.MaPhong,
-        soPhong = phong.SoPhong,
-        dangSuDung = phong.DangSuDung,
-        giaTheoGio = phong.LoaiPhong.GiaTheoGio,
-        giaTheoNgay = phong.LoaiPhong.GiaTheoNgay
-    });
-}
+            return Ok(new
+            {
+                success = true,
+                maPhong = phong.MaPhong,
+                soPhong = phong.SoPhong,
+                dangSuDung = phong.DangSuDung,
+                giaTheoGio = phong.LoaiPhong.GiaTheoGio,
+                giaTheoNgay = phong.LoaiPhong.GiaTheoNgay
+            });
+        }
 
         [HttpGet("GetRoomServices")]
         [Authorize(Roles = "Nhân viên, Quản trị")]
@@ -676,6 +676,38 @@ public async Task<IActionResult> GetRoom(int maPhong)
             }
         }
 
+        [HttpGet("GetRoomPrice/{maPhong}")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> GetRoomPrice(int maPhong)
+        {
+            try
+            {
+                var phong = await _context.Phong
+                    .Include(p => p.LoaiPhong)
+                    .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
+
+                if (phong == null)
+                {
+                    return NotFound(new { success = false, message = "Phòng không tồn tại" });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    maPhong = phong.MaPhong,
+                    soPhong = phong.SoPhong,
+                    loaiPhong = phong.LoaiPhong.TenLoaiPhong,
+                    giaTheoGio = phong.LoaiPhong.GiaTheoGio,
+                    giaTheoNgay = phong.LoaiPhong.GiaTheoNgay
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy giá phòng: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi lấy giá phòng: {ex.Message}" });
+            }
+        }
+
         public class PaymentModel
         {
             public int MaDatPhong { get; set; }
@@ -689,15 +721,15 @@ public async Task<IActionResult> GetRoom(int maPhong)
             try
             {
                 var datPhong = await _context.DatPhong
-                    .Include(dp => dp.Phong) // Sửa từ MaPhongNavigation thành Phong
-                    .ThenInclude(p => p.LoaiPhong) // Sửa từ MaLoaiPhong thành LoaiPhong
+                    .Include(dp => dp.Phong)
+                    .ThenInclude(p => p.LoaiPhong)
                     .Include(dp => dp.ChiTietDichVu)
                     .FirstOrDefaultAsync(dp => dp.MaDatPhong == model.MaDatPhong && dp.TrangThai == "Đã nhận phòng");
                 if (datPhong == null)
                     return Ok(new { success = false, message = "Không tìm thấy đặt phòng" });
 
                 var thoiGianO = (DateTime.Now - datPhong.NgayNhanPhong).TotalHours;
-                var loaiPhong = datPhong.Phong.LoaiPhong; // Sửa từ MaPhongNavigation thành Phong.LoaiPhong
+                var loaiPhong = datPhong.Phong.LoaiPhong;
                 decimal tongTienPhong = thoiGianO <= 24
                     ? (decimal)Math.Ceiling(thoiGianO) * loaiPhong.GiaTheoGio
                     : loaiPhong.GiaTheoNgay;
@@ -710,7 +742,8 @@ public async Task<IActionResult> GetRoom(int maPhong)
                 datPhong.TongTienTheoThoiGian = tongTienPhong;
                 datPhong.TongTienDichVu = tongTienDichVu;
                 datPhong.TrangThai = "Đã trả phòng";
-                datPhong.Phong.DangSuDung = false; // Sửa từ MaPhongNavigation thành Phong
+                datPhong.TrangThaiThanhToan = "Đã thanh toán";
+                datPhong.Phong.DangSuDung = false;
 
                 var maNhanVien = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
                 var caHienTai = await _context.CaLamViec
@@ -724,17 +757,31 @@ public async Task<IActionResult> GetRoom(int maPhong)
                     TongTien = tongTien,
                     PhuongThucThanhToan = "Tiền mặt",
                     TrangThaiThanhToan = "Đã thanh toán",
-                    LoaiHoaDon = "Tiền phòng"
+                    LoaiHoaDon = "Tiền phòng",
+                    GhiChu = model.GhiChu
                 };
                 _context.HoaDon.Add(hoaDon);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { success = true, tongTien = tongTien, tongTienPhong, tongTienDichVu });
+                // Log để kiểm tra
+                _logger.LogInformation($"Đã tạo hóa đơn: MaHoaDon = {hoaDon.MaHoaDon}, TrangThaiThanhToan = {hoaDon.TrangThaiThanhToan}");
+                _logger.LogInformation($"Đã cập nhật DatPhong: MaDatPhong = {datPhong.MaDatPhong}, TrangThaiThanhToan = {datPhong.TrangThaiThanhToan}");
+
+                return Ok(new
+                {
+                    success = true,
+                    tongTien = tongTien,
+                    tongTienPhong,
+                    tongTienDichVu,
+                    datPhongTrangThaiThanhToan = datPhong.TrangThaiThanhToan, // Trả về trạng thái của DatPhong
+                    hoaDonTrangThaiThanhToan = hoaDon.TrangThaiThanhToan // Trả về trạng thái của HoaDon
+                });
             }
             catch (Exception ex)
             {
-                return Ok(new { success = false, message = $"Lỗi khi thanh toán: {ex.Message}" });
+                _logger.LogError(ex, "Lỗi khi thanh toán: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi thanh toán: {ex.Message}" });
             }
         }
     }
- }
+}

@@ -26,6 +26,8 @@ const billingServiceFee = document.getElementById('billing-service-fee');
 const billingTotal = document.getElementById('billing-total');
 const billingFinal = document.getElementById('billing-final');
 const billingPrepaid = document.getElementById('billing-prepaid');
+const billingStatus = document.getElementById('billing-status');
+const billingDatphongStatus = document.getElementById('billing-datphong-status');
 
 // Gán sự kiện click cho nút "Đặt phòng"
 document.addEventListener('DOMContentLoaded', function () {
@@ -354,10 +356,10 @@ rooms.forEach(room => {
         const roomId = room.getAttribute('data-room-id');
         const datPhongId = room.getAttribute('data-datphong-id');
         const staff = room.getAttribute('data-staff');
-        const staffId = room.getAttribute('data-staff-id'); // Lấy MaNhanVien
+        const staffId = room.getAttribute('data-staff-id');
         const checkin = room.getAttribute('data-checkin');
-        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0');
-        const priceDay = parseInt(room.getAttribute('data-price-day') || '0');
+        const priceHour = parseInt(room.getAttribute('data-price-hour') || '0') * 1000;
+        const priceDay = parseInt(room.getAttribute('data-price-day') || '0') * 1000;
 
         // Kiểm tra datPhongId
         console.log('RoomId:', roomId);
@@ -374,8 +376,10 @@ rooms.forEach(room => {
         }
 
         billingBillId.textContent = datPhongId;
+        billingStatus.textContent = 'Chưa thanh toán'; // Trạng thái của HoaDon
+        billingDatphongStatus.textContent = 'Chưa thanh toán'; // Trạng thái của DatPhong (ban đầu)
         billingStaff.textContent = staff || 'N/A';
-        billingStaffId.textContent = staffId || 'N/A'; // Hiển thị MaNhanVien
+        billingStaffId.textContent = staffId || 'N/A';
         billingCheckin.textContent = checkin;
         billingCheckout.textContent = new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' });
 
@@ -475,7 +479,7 @@ rooms.forEach(room => {
     });
 });
 
-// Process Payment
+
 function processPayment() {
     const datPhongId = billingBillId.textContent;
     const note = billingNote.value;
@@ -504,17 +508,93 @@ function processPayment() {
         })
         .then(data => {
             if (data.success) {
+                // Cập nhật trạng thái phòng trên giao diện
                 const room = Array.from(rooms).find(r => r.getAttribute('data-datphong-id') === datPhongId);
                 room.classList.remove('occupied');
                 room.querySelector('.status').textContent = 'Trống';
                 room.querySelector('.door-icon').classList.remove('fa-door-open');
                 room.querySelector('.door-icon').classList.add('fa-door-closed');
                 room.removeAttribute('data-datphong-id');
+
+                // Cập nhật trạng thái trong modal
+                billingStatus.textContent = data.hoaDonTrangThaiThanhToan || 'Đã thanh toán';
+                billingDatphongStatus.textContent = data.datPhongTrangThaiThanhToan || 'Đã thanh toán';
+
+                // Cập nhật thông tin trong modal hóa đơn
                 billingRoomPrice.textContent = data.tongTienPhong.toLocaleString('vi-VN') + 'đ';
                 billingTotal.textContent = data.tongTien.toLocaleString('vi-VN') + 'đ';
                 billingFinal.textContent = data.tongTien.toLocaleString('vi-VN') + 'đ';
+
+                // Cập nhật lại danh sách dịch vụ và các thông tin khác trong modal
+                fetch(`https://localhost:5284/api/KhachSanAPI/GetRoomServices?maDatPhong=${datPhongId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error(`Yêu cầu API thất bại: Status ${response.status}, StatusText: ${response.statusText}`);
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        billingServices.innerHTML = '';
+                        let totalServices = 0;
+
+                        // Thêm dòng tiền phòng vào bảng
+                        billingServices.innerHTML += `
+                            <tr>
+                                <td>-</td>
+                                <td>Tiền phòng (${loaiTinhTien})</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>${Math.ceil(thoiGianO)} giờ</td>
+                                <td>${(loaiTinhTien === 'Theo giờ' ? priceHour : priceDay).toLocaleString()}đ</td>
+                                <td>0%</td>
+                                <td>${data.tongTienPhong.toLocaleString()}đ</td>
+                                <td>-</td>
+                            </tr>
+                        `;
+
+                        // Thêm các dòng dịch vụ
+                        if (data.success && data.services) {
+                            data.services.forEach(service => {
+                                totalServices += service.thanhTien;
+                                billingServices.innerHTML += `
+                                    <tr>
+                                        <td>${service.maDichVu}</td>
+                                        <td>${service.tenDichVu}</td>
+                                        <td>-</td>
+                                        <td>Chai</td>
+                                        <td>${service.soLuong}</td>
+                                        <td>${service.donGia.toLocaleString()}đ</td>
+                                        <td>0%</td>
+                                        <td>${service.thanhTien.toLocaleString()}đ</td>
+                                        <td>-</td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        billingTotalServices.textContent = totalServices.toLocaleString('vi-VN') + 'đ';
+                        billingDiscount.textContent = '0đ';
+                        billingServiceFee.textContent = '0đ';
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi tải dịch vụ phòng:', error);
+                        if (error.message.includes('401')) {
+                            alert('Bạn cần đăng nhập để tính tiền!');
+                            window.location.href = '/TaiKhoan/DangNhap';
+                        } else {
+                            alert('Không thể tải danh sách dịch vụ: ' + error.message);
+                        }
+                    });
+
                 alert(`Thanh toán thành công! Tổng tiền: ${data.tongTien.toLocaleString('vi-VN')}đ`);
-                
+                // Không đóng modal: xóa dòng closeBillingModal()
             } else {
                 alert(data.message || 'Có lỗi khi thanh toán!');
             }
@@ -529,6 +609,7 @@ function processPayment() {
             }
         });
 }
+
 
 // Close Modals
 function closeModal() { roomModal.style.display = 'none'; }

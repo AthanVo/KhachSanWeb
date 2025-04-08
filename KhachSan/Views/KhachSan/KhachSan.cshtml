@@ -66,7 +66,7 @@
                 {
                     var isOccupied = room.DangSuDung ? "occupied" : ""; // Class occupied nếu phòng đang sử dụng
                     var doorIcon = room.DangSuDung ? "fa-door-open" : "fa-door-closed"; // Icon cửa mở/đóng
-                    var priceFormatted = (room.GiaTheoGio / 1000).ToString("N0") + "K"; // Định dạng giá (275K)
+                    var priceFormatted = (room.GiaTheoGio / 1000).ToString("N0") +  "Ngàn"; 
 
                     <div class="room @isOccupied"
                          data-room-id="@room.MaPhong"
@@ -168,6 +168,8 @@
             <h3>Thanh toán hóa đơn</h3>
             <div class="info">
                 <p>Mã hóa đơn: <span id="billing-bill-id"></span></p>
+                <p>Trạng thái hóa đơn: <span id="billing-status">Chưa thanh toán</span></p> <!-- Thêm dòng này -->
+                <p>Trạng thái thanh toán đặt phòng: <span id="billing-datphong-status">Chưa thanh toán</span></p> <!-- Thêm dòng này -->
                 <p>Tên NV mở phòng:<span id="billing-staff"></span></p>
                 <p>Mã NV mở phòng: <span id="billing-staff-id"></span></p>
                 <p>Tên NV tính tiền:  @Context.Session.GetString("HoTen")</p>
