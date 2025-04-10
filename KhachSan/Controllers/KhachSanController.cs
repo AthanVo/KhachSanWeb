@@ -24,7 +24,7 @@ namespace KhachSan.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Nhân viên, Quản trị")]
-        public async Task<IActionResult> KhachSan()
+        public async Task<IActionResult> KhachSan(int page = 1)
         {
             try
             {
@@ -45,7 +45,20 @@ namespace KhachSan.Controllers
                     }
                 }
 
-                // Load dữ liệu phòng từ CSDL
+                // Số phòng trên mỗi trang
+                const int pageSize = 16;
+
+                // Tính tổng số phòng
+                var totalRooms = await _context.Phong.CountAsync();
+
+                // Tính tổng số trang
+                var totalPages = (int)Math.Ceiling((double)totalRooms / pageSize);
+
+                // Đảm bảo page hợp lệ
+                page = page < 1 ? 1 : page;
+                page = page > totalPages ? totalPages : page;
+
+                // Load dữ liệu phòng từ CSDL với phân trang
                 var rooms = await _context.Phong
                     .Include(p => p.LoaiPhong)
                     .Include(p => p.DatPhong.Where(dp => dp.TrangThai == "Đã nhận phòng" || dp.TrangThai == "Đã trả phòng"))
@@ -96,7 +109,15 @@ namespace KhachSan.Controllers
                             .FirstOrDefault() : null
                     })
                     .OrderBy(p => p.SoPhong)
+                    .Skip((page - 1) * pageSize) // Bỏ qua các phòng của trang trước
+                    .Take(pageSize) // Lấy 16 phòng cho trang hiện tại
                     .ToListAsync();
+
+                // Truyền thông tin phân trang vào ViewBag để sử dụng trong view
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalRooms = totalRooms;
 
                 return View(rooms);
             }
