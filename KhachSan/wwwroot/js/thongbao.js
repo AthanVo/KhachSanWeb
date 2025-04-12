@@ -1,5 +1,26 @@
 ﻿let notificationsData = [];
 
+// Hàm hiển thị thông báo toast (thêm vào file thongbao.js)
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        console.error('Không tìm thấy toast-container trong DOM!');
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} icon"></i>
+        <span class="message">${message}</span>
+        <button class="close" onclick="this.parentElement.remove()">×</button>
+    `;
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     loadNotifications();
     checkStuckShifts();
@@ -34,6 +55,7 @@ function loadNotifications() {
                     if (dropdown) {
                         dropdown.innerHTML = '<p>Lỗi khi tải thông báo!</p>';
                     }
+                    showToast(data.message || 'Không thể lấy thông tin người dùng!', 'error');
                 }
             })
             .catch(error => {
@@ -42,6 +64,7 @@ function loadNotifications() {
                 if (dropdown) {
                     dropdown.innerHTML = '<p>Lỗi khi tải thông báo!</p>';
                 }
+                showToast('Lỗi khi tải thông tin người dùng!', 'error');
             });
     } else {
         continueLoadingNotifications(maNhanVien);
@@ -95,10 +118,10 @@ function continueLoadingNotifications(maNhanVien) {
                     item.className = 'notification-item';
                     item.setAttribute('data-id', notificationId);
                     item.innerHTML = `
-                    <strong>${title}</strong>
-                    <p>${content}</p>
-                    <small>${new Date(time).toLocaleString('vi-VN')}</small>
-                `;
+                        <strong>${title}</strong>
+                        <p>${content}</p>
+                        <small>${new Date(time).toLocaleString('vi-VN')}</small>
+                    `;
 
                     item.addEventListener('click', () => {
                         console.log("Click vào thông báo ID:", notificationId);
@@ -118,6 +141,7 @@ function continueLoadingNotifications(maNhanVien) {
             if (dropdown) {
                 dropdown.innerHTML = '<p>Lỗi khi tải thông báo!</p>';
             }
+            showToast('Lỗi khi tải thông báo!', 'error');
         });
 }
 
@@ -146,7 +170,7 @@ function markAsRead(maThongBao, element) {
 
     if (!maThongBao) {
         console.error("ID thông báo không hợp lệ:", maThongBao);
-        alert("Lỗi: ID thông báo không hợp lệ");
+        showToast("Lỗi: ID thông báo không hợp lệ", 'error');
         return;
     }
 
@@ -170,6 +194,7 @@ function markAsRead(maThongBao, element) {
 
             if (data.success) {
                 console.log(`Đánh dấu thành công, trạng thái: ${data.status}`);
+                showToast('Thông báo đã được đánh dấu là đã đọc!', 'success');
 
                 if (element && element.parentNode) {
                     element.remove();
@@ -191,13 +216,13 @@ function markAsRead(maThongBao, element) {
                 }
             } else {
                 console.error(`Lỗi: ${data.message}`);
-                alert(data.message || 'Có lỗi xảy ra khi đánh dấu thông báo!');
+                showToast(data.message || 'Có lỗi xảy ra khi đánh dấu thông báo!', 'error');
                 loadNotifications();
             }
         })
         .catch(error => {
             console.error('Lỗi khi đánh dấu thông báo:', error);
-            alert('Lỗi khi đánh dấu thông báo!');
+            showToast('Lỗi khi đánh dấu thông báo!', 'error');
             loadNotifications();
         });
 }
@@ -223,9 +248,11 @@ function checkStuckShifts() {
                 loadNotifications();
             } else {
                 console.error('Lỗi khi kiểm tra ca bị kẹt:', data.message);
+                showToast(data.message || 'Lỗi khi kiểm tra ca bị kẹt!', 'error');
             }
         })
         .catch(error => {
             console.error('Lỗi khi kiểm tra ca bị kẹt:', error);
+            showToast('Lỗi khi kiểm tra ca bị kẹt!', 'error');
         });
 }

@@ -7,6 +7,27 @@ function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
+// Hàm hiển thị thông báo toast (thêm vào file ketca.js)
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        console.error('Không tìm thấy toast-container trong DOM!');
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} icon"></i>
+        <span class="message">${message}</span>
+        <button class="close" onclick="this.parentElement.remove()">×</button>
+    `;
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
+}
+
 // Hàm lấy thông tin người dùng hiện tại
 function fetchCurrentUser() {
     return fetch('https://localhost:5284/api/KhachSanAPI/current-user', {
@@ -66,17 +87,16 @@ function fetchCurrentShift() {
                     ? thoiGianBatDau.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
                     : 'N/A';
                 document.getElementById('shift-end').textContent = new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
-                // Sử dụng tongTienHoaDon thay vì tongTienTrongCa
                 document.getElementById('shift-total').textContent = formatCurrency(data.tongTienHoaDon || 0);
                 document.getElementById('shift-transfer').textContent = formatCurrency(data.shift.tongTienChuyenGiao || 0);
             } else {
                 console.error('Lỗi từ API:', data.message);
-                alert(data.message || 'Không thể lấy thông tin ca hiện tại');
+                showToast(data.message || 'Không thể lấy thông tin ca hiện tại', 'error');
             }
         })
         .catch(error => {
             console.error('Lỗi chi tiết khi tải thông tin ca hiện tại:', error);
-            alert('Không thể kết nối đến server. Vui lòng kiểm tra mạng hoặc thử lại sau.');
+            showToast('Không thể kết nối đến server. Vui lòng kiểm tra mạng hoặc thử lại sau.', 'error');
         });
 }
 
@@ -216,15 +236,15 @@ function submitShiftEnd() {
         })
         .then(result => {
             if (result.success) {
-                alert(result.message);
+                showToast(result.message, 'success');
                 closeShiftEndModal();
             } else {
-                alert(result.message || 'Có lỗi xảy ra khi kết thúc ca');
+                showToast(result.message || 'Có lỗi xảy ra khi kết thúc ca', 'error');
             }
         })
         .catch(error => {
             console.error('Lỗi khi gửi yêu cầu kết thúc ca:', error);
-            alert('Đã xảy ra lỗi khi kết thúc ca làm việc');
+            showToast('Đã xảy ra lỗi khi kết thúc ca làm việc', 'error');
         });
 }
 

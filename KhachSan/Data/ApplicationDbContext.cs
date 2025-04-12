@@ -28,6 +28,7 @@ public partial class ApplicationDBContext : DbContext
     public virtual DbSet<NhomDatPhong> NhomDatPhong { get; set; }
     public virtual DbSet<Phong> Phong { get; set; }
     public virtual DbSet<ThongBao> ThongBao { get; set; }
+    public DbSet<NhomPhong> NhomPhong { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -37,6 +38,21 @@ public partial class ApplicationDBContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        {
+            modelBuilder.Entity<NhomPhong>()
+                .HasKey(np => new { np.MaNhomDatPhong, np.MaPhong });
+
+            modelBuilder.Entity<NhomPhong>()
+                .HasOne(np => np.NhomDatPhong)
+                .WithMany()
+                .HasForeignKey(np => np.MaNhomDatPhong);
+
+            modelBuilder.Entity<NhomPhong>()
+                .HasOne(np => np.Phong)
+                .WithMany()
+                .HasForeignKey(np => np.MaPhong);
+        }
+
         modelBuilder.Entity<CaLamViec>(entity =>
         {
             entity.HasKey(e => e.MaCaLamViec).HasName("PK__CaLamVie__E545F625FDEC358D");

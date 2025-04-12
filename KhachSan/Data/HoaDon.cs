@@ -19,5 +19,5 @@ public partial class HoaDon
     // Navigation properties
     public virtual CaLamViec? CaLamViec { get; set; }
     public virtual DatPhong? DatPhong { get; set; }
-    public virtual NhomDatPhong? NhomDatPhong { get; set; }
+    public virtual NhomDatPhong NhomDatPhong { get; set; }
 }

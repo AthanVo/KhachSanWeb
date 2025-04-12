@@ -11,12 +11,13 @@
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="~/css/khachsan.css" asp-append-version="true" />
 </head>
 <body>
     <div class="header">
         <div class="left">
-            <img src="https://via.placeholder.com/40" alt="Logo">
+            <img src="~/anh/screenshot 2025-04-11 030035.png" alt="Logo" />
             <div class="info">
                 <p>Tên NV: @Context.Session.GetString("HoTen")</p>
                 <p>Mã nhân viên: @Context.Session.GetInt32("NguoiDungId")</p>
@@ -35,9 +36,13 @@
             <button onclick="openShiftEndModal()">Kết ca làm việc</button>
             <button class="button" onclick="logout()">Đăng xuất</button>
             <button class="button" onclick="changePassword()">Đổi mật khẩu</button>
+            <button class="toggle-dark-mode" onclick="toggleDarkMode()">
+                <i class="fas fa-moon"></i> Chế độ tối
+            </button>
         </div>
     </div>
 
+    <!-- Phần còn lại của HTML giữ nguyên -->
     <div class="main">
         <div class="sidebar">
             <h3>Thông tin chi tiết</h3>
@@ -54,9 +59,9 @@
             <div class="toolbar">
                 <button onclick="openGroupModal()">Thêm vào nhóm</button>
                 <button onclick="openMergeBillModal()">Gộp hóa đơn</button>
-                <button>Gọi Bữa ăn</button>
+                <!--<button>Gọi Bữa ăn</button>
                 <button>Chuyển Phòng</button>
-                <button>Đóng Phòng</button>
+                <button>Đóng Phòng</button>    -->
             </div>
             <div class="rooms">
                 @foreach (var room in Model)
@@ -94,22 +99,17 @@
             <div class="pagination-container">
                 <nav aria-label="Page navigation">
                     <ul class="pagination">
-                        <!-- Nút Trang trước -->
                         <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
                             <a class="page-link" href="@Url.Action("KhachSan", "KhachSan", new { page = ViewBag.CurrentPage - 1 })" aria-label="Previous">
                                 <span aria-hidden="true">«</span>
                             </a>
                         </li>
-
-                        <!-- Số trang -->
                         @for (int i = 1; i <= ViewBag.TotalPages; i++)
                         {
                             <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
                                 <a class="page-link" href="@Url.Action("KhachSan", "KhachSan", new { page = i })">@i</a>
                             </li>
                         }
-
-                        <!-- Nút Trang sau -->
                         <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
                             <a class="page-link" href="@Url.Action("KhachSan", "KhachSan", new { page = ViewBag.CurrentPage + 1 })" aria-label="Next">
                                 <span aria-hidden="true">»</span>
@@ -120,11 +120,9 @@
             </div>
         </div>
 
-        <!-- Thêm span để lưu MaPhong -->
         <span id="booking-room-id" style="display: none;"></span>
         <span id="booking-maphong" style="display: none;"></span>
 
-        <!-- Modal chi tiết (nhấp 1 lần cho phòng đang sử dụng) -->
         <div class="modal" id="roomModal">
             <button class="close-btn" onclick="closeModal()">×</button>
             <h3>Thông tin chi tiết</h3>
@@ -141,7 +139,6 @@
             </div>
         </div>
 
-        <!-- Modal đặt phòng (nhấp 1 lần cho phòng trống) -->
         <div class="booking-modal" id="bookingModal">
             <button class="close-btn" onclick="closeBookingModal()">×</button>
             <h3>Đặt phòng <span id="booking-room-id"></span></h3>
@@ -170,7 +167,6 @@
             </div>
         </div>
 
-        <!-- Modal thêm dịch vụ -->
         <div class="service-modal" id="serviceModal">
             <button class="close-btn" onclick="closeServiceModal()">×</button>
             <h3>Thêm dịch vụ cho <span id="service-room-id"></span></h3>
@@ -188,7 +184,6 @@
             </div>
         </div>
 
-        <!-- Modal tính tiền (nhấp 2 lần) -->
         <div class="billing-modal" id="billingModal">
             <button class="close-btn" onclick="closeBillingModal()">×</button>
             <h3>Thanh toán hóa đơn</h3>
@@ -224,7 +219,7 @@
             </table>
             <div class="summary">
                 <div>
-                    <p>Tổng tiền hóa đơn: <span class="highlight" id="billing-total-services">0</span></p>
+                    <p>Tổng tiền dịch vụ: <span class="highlight" id="billing-total-services">0</span></p>
                     <p>Chiết khấu hóa đơn: <span id="billing-discount">0</span></p>
                     <p>Tiền phòng: <span id="billing-room-price">0</span></p>
                     <p>Phí dịch vụ khách: <span id="billing-service-fee">0</span></p>
@@ -240,7 +235,6 @@
             </div>
         </div>
 
-        <!-- Modal thêm vào nhóm -->
         <div class="group-modal" id="groupModal">
             <button class="close-btn" onclick="closeGroupModal()">×</button>
             <h3>Thêm vào nhóm</h3>
@@ -256,17 +250,20 @@
                     <!-- Danh sách phòng sẽ được thêm bằng JavaScript -->
                 </div>
                 <div class="actions">
-                    <button class="add-btn" onclick="addToGroup()">Thêm</button>
-                    <button class="cancel-btn" onclick="closeGroupModal()">Hủy</button>
+                    <button id="add-group-btn" onclick="addToGroup()">Thêm</button>
+                    <button id="cancel-group-btn" onclick="closeGroupModal()">Hủy</button>
                 </div>
             </div>
         </div>
 
-        <!-- Modal gộp hóa đơn -->
         <div class="merge-bill-modal" id="mergeBillModal">
             <button class="close-btn" onclick="closeMergeBillModal()">×</button>
             <h3>Gộp hóa đơn cho nhóm</h3>
             <div class="info">
+                <label for="group-select">Chọn nhóm:</label>
+                <select id="group-select" onchange="updateMergeBillDetails()">
+                    <!-- Các nhóm sẽ được thêm bằng JavaScript -->
+                </select>
                 <p>Mã nhóm: <span id="merge-group-id"></span></p>
                 <p>Tên nhóm: <span id="merge-group-name"></span></p>
                 <p>Người đại diện: <span id="merge-group-representative"></span></p>
@@ -300,7 +297,6 @@
             </div>
         </div>
 
-        <!-- Modal kết ca -->
         <div class="shift-end-modal" id="shiftEndModal">
             <button class="close-btn" onclick="closeShiftEndModal()">×</button>
             <h3>Kết ca làm việc</h3>
@@ -334,11 +330,59 @@
         </div>
     </div>
 
+
+    <!-- Thêm vào cuối <body>, trước toast-container -->
+    <div id="confirm-modal" class="modal confirm-modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3>Xác nhận</h3>
+                <span class="close-confirm-modal">×</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-yes" class="btn btn-success">Đồng ý</button>
+                <button id="confirm-no" class="btn btn-secondary">Hủy bỏ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+
+    <!-- Thêm toast-container vào cuối body -->
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/khachsan.js"></script>
     <script src="~/js/ketca.js"></script>
     <script src="~/js/thongbao.js"></script>
+    <script src="~/js/nhom.js"></script>
+    <script>
+        // Hàm chuyển đổi chế độ sáng/tối
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const button = document.querySelector('.toggle-dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                button.innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                button.innerHTML = '<i class="fas fa-moon"></i> Chế độ tối';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        }
+
+        // Kiểm tra trạng thái chế độ tối khi tải trang
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.toggle-dark-mode').innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+            }
+        });
+    </script>
 </body>
 </html>

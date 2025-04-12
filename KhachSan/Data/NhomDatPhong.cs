@@ -5,7 +5,7 @@ namespace KhachSan.Data;
 
 public partial class NhomDatPhong
 {
-    public int MaNhomDatPhong { get; set; }
+    public int? MaNhomDatPhong { get; set; }
     public string? TenNhom { get; set; }
     public int? MaNguoiDaiDien { get; set; }
     public string? HoTenNguoiDaiDien { get; set; }

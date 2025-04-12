@@ -26,7 +26,7 @@ public partial class DatPhong
     public string LoaiDatPhong { get; set; }
 
     // Navigation properties
-    public virtual NhomDatPhong? NhomDatPhong { get; set; }
+    public virtual NhomDatPhong NhomDatPhong { get; set; }
     public virtual NguoiDung? NguoiDung { get; set; }
     public virtual NguoiDung NhanVien { get; set; } = null!;
     public virtual Phong Phong { get; set; } = null!;
