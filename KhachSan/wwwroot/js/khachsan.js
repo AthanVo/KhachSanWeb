@@ -73,6 +73,7 @@ function showToast(message, type = 'success') {
     });
 }
 
+
 // Hàm định dạng tiền tệ
 function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -126,11 +127,164 @@ function changePassword() {
 
 // Scan CCCD (mô phỏng)
 function scanCCCD() {
-    document.getElementById('cccd-number').value = '123456789';
-    document.getElementById('customer-name').value = 'Trần Quốc Đông';
-    document.getElementById('customer-address').value = '123 Đường ABC, TP.HCM';
-    document.getElementById('customer-nationality').value = 'Việt Nam';
-    showToast('Quét CCCD thành công!', 'success');
+    const scanContainer = document.getElementById('scan-container');
+    const video = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvas = canvasElement.getContext('2d', { willReadFrequently: true }); // Tối ưu Canvas2D
+    const stopScanButton = document.getElementById('stop-scan');
+    const cccdImageInput = document.getElementById('cccd-image');
+    let stream = null;
+
+    // Kiểm tra API getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('Trình duyệt không hỗ trợ truy cập camera!', 'error');
+        return;
+    }
+
+    // Hiển thị giao diện quét
+    scanContainer.style.display = 'block';
+
+    // Yêu cầu quyền truy cập webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(mediaStream => {
+            stream = mediaStream;
+            video.srcObject = stream;
+            video.play().catch(err => {
+                showToast('Không thể khởi động camera: ' + err.message, 'error');
+                stopStream();
+                scanContainer.style.display = 'none';
+            });
+            requestAnimationFrame(tick);
+        })
+        .catch(err => {
+            let errorMessage = 'Không thể truy cập camera: ' + err.message;
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Vui lòng cấp quyền sử dụng camera trong cài đặt trình duyệt!';
+            } else if (err.name === 'NotFoundError') {
+                errorMessage = 'Không tìm thấy webcam! Hãy thử tải ảnh CCCD.';
+            } else if (err.name === 'NotReadableError') {
+                errorMessage = 'Webcam đang được ứng dụng khác sử dụng! Vui lòng đóng Zoom, Teams.';
+            }
+            showToast(errorMessage, 'error');
+            scanContainer.style.display = 'none';
+        });
+
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'attemptBoth',
+            });
+
+            if (code) {
+                console.log('QR Data:', code.data); // Debug dữ liệu thô
+                const qrData = code.data.split('|');
+                // Kiểm tra số CCCD và ít nhất 6 trường (bỏ qua số CMND cũ nếu có)
+                if (qrData.length >= 6 && /^\d{12}$/.test(qrData[0])) {
+                    document.getElementById('cccd-number').value = qrData[0];
+                    // Họ tên: Lấy qrData[2], kiểm tra không phải số
+                    document.getElementById('customer-name').value = qrData[2] && !/^\d+$/.test(qrData[2]) ? qrData[2] : '';
+                    // Địa chỉ: Lấy qrData[5], kiểm tra chứa dấu cách
+                    document.getElementById('customer-address').value = qrData[5] && qrData[5].includes(' ') ? qrData[5] : '';
+                    document.getElementById('customer-nationality').value = 'Việt Nam';
+                    showToast('Quét CCCD thành công!', 'success');
+                    stopStream();
+                    scanContainer.style.display = 'none';
+                } else {
+                    showToast('Dữ liệu CCCD không hợp lệ! Vui lòng căn chỉnh mã QR rõ nét hoặc thử tải ảnh khác.', 'error');
+                    requestAnimationFrame(tick);
+                }
+            } else {
+                requestAnimationFrame(tick);
+            }
+        } else {
+            requestAnimationFrame(tick);
+        }
+    }
+
+    // Hàm dừng webcam
+    function stopStream() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    // Xử lý nút dừng quét
+    stopScanButton.onclick = () => {
+        stopStream();
+        scanContainer.style.display = 'none';
+        showToast('Đã dừng quét CCCD.', 'info');
+    };
+
+    // Xử lý tải ảnh CCCD
+    cccdImageInput.onchange = function (e) {
+        const file = e.target.files[0];
+        if (!file) {
+            showToast('Chưa chọn ảnh CCCD!', 'error');
+            return;
+        }
+
+        const img = new Image();
+        img.onload = function () {
+            // Tối ưu kích thước canvas
+            const maxSize = 1024;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+                if (width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                }
+            } else {
+                if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+            }
+            canvasElement.width = width;
+            canvasElement.height = height;
+            canvas.drawImage(img, 0, 0, width, height);
+
+            const imageData = canvas.getImageData(0, 0, width, height);
+            const code = jsQR(imageData.data, width, height, {
+                inversionAttempts: 'attemptBoth',
+            });
+
+            if (code) {
+                console.log('QR Data from Image:', code.data); // Debug dữ liệu thô
+                const qrData = code.data.split('|');
+                if (qrData.length >= 6 && /^\d{12}$/.test(qrData[0])) {
+                    document.getElementById('cccd-number').value = qrData[0];
+                    document.getElementById('customer-name').value = qrData[2] && !/^\d+$/.test(qrData[2]) ? qrData[2] : '';
+                    document.getElementById('customer-address').value = qrData[5] && qrData[5].includes(' ') ? qrData[5] : '';
+                    document.getElementById('customer-nationality').value = 'Việt Nam';
+                    showToast('Quét CCCD từ ảnh thành công!', 'success');
+                    scanContainer.style.display = 'none';
+                } else {
+                    showToast('Dữ liệu CCCD trong ảnh không hợp lệ! Vui lòng chọn ảnh chứa mã QR rõ nét.', 'error');
+                }
+            } else {
+                showToast('Không tìm thấy mã QR trong ảnh! Vui lòng chọn ảnh chứa mã QR rõ nét.', 'error');
+            }
+            URL.revokeObjectURL(img.src);
+        };
+        img.onerror = function () {
+            showToast('Lỗi khi tải ảnh CCCD! Vui lòng thử lại với định dạng JPG/PNG.', 'error');
+        };
+        img.src = URL.createObjectURL(file);
+    };
+
+    // Tự động dừng quét khi đóng modal
+    bookingModal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('close-btn') || e.target.classList.contains('cancel-btn')) {
+            stopStream();
+            scanContainer.style.display = 'none';
+        }
+    }, { once: true });
 }
 
 // Book Room

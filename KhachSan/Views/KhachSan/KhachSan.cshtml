@@ -153,6 +153,18 @@
                 <input type="text" id="cccd-number" placeholder="Nhập số CCCD">
                 <div class="cccd-actions">
                     <button onclick="scanCCCD()">Quét CCCD</button>
+                    <input type="file" id="cccd-image" accept="image/*" style="margin-left: 10px;" title="Tải ảnh CCCD nếu webcam không hoạt động">
+                </div>
+                <!-- Khu vực quét với khung hướng dẫn -->
+                <div id="scan-container" style="display: none; margin-top: 10px; position: relative; text-align: center;">
+                    <div style="position: relative; display: inline-block;">
+                        <video id="video" width="300" height="200" autoplay style="border-radius: 4px; border: 1px solid #ccc;"></video>
+                        <!-- Khung hướng dẫn căn chỉnh mã QR -->
+                        <div style="position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: 2px dashed #00ff00; opacity: 0.7; pointer-events: none;"></div>
+                        <p style="margin: 5px 0; color: #333; font-size: 14px;">Đặt mã QR trên CCCD vào khung</p>
+                    </div>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <button id="stop-scan" style="margin-top: 5px; background: #d33; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Dừng quét</button>
                 </div>
                 <label for="customer-name">Họ tên khách hàng:</label>
                 <input type="text" id="customer-name" placeholder="Họ tên">
@@ -362,6 +374,7 @@
     <script src="~/js/ketca.js"></script>
     <script src="~/js/thongbao.js"></script>
     <script src="~/js/nhom.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // Hàm chuyển đổi chế độ sáng/tối
         function toggleDarkMode() {

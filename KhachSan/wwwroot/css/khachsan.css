@@ -1380,3 +1380,40 @@ body {
         color: #6c757d;
         cursor: not-allowed;
     }
+
+#scan-container {
+    text-align: center;
+}
+
+#video {
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+#stop-scan {
+    background-color: #d33;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+    #stop-scan:hover {
+        background-color: #b00;
+    }
+
+#scan-container {
+    text-align: center;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+#video {
+    border: 1px solid #ccc;
+}
+
+#stop-scan:hover {
+    background: #b00;
+}
