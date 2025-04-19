@@ -703,13 +703,40 @@ namespace KhachSan.Controllers
             {
                 if (string.IsNullOrEmpty(request.TenNhom) || string.IsNullOrEmpty(request.HoTenNguoiDaiDien) || string.IsNullOrEmpty(request.SoDienThoaiNguoiDaiDien))
                 {
-                    return BadRequest("Tên nhóm, người đại diện, và số điện thoại không được để trống.");
-                }
-                if (request.MaPhong == null || !request.MaPhong.Any())
-                {
-                    return BadRequest("Phải chọn ít nhất một phòng.");
+                    return BadRequest(new { success = false, message = "Tên nhóm, người đại diện, và số điện thoại không được để trống." });
                 }
 
+                // Kiểm tra nếu nhóm đã tồn tại (dựa trên TenNhom hoặc một tiêu chí khác)
+                var existingGroup = await _context.NhomDatPhong
+                    .FirstOrDefaultAsync(g => g.TenNhom == request.TenNhom && g.TrangThai != "Đã hủy");
+
+                if (existingGroup != null)
+                {
+                    // Cập nhật thông tin nhóm nếu đã tồn tại
+                    existingGroup.HoTenNguoiDaiDien = request.HoTenNguoiDaiDien;
+                    existingGroup.SoDienThoaiNguoiDaiDien = request.SoDienThoaiNguoiDaiDien;
+
+                    // Xóa các phòng cũ (nếu có) và thêm phòng mới
+                    var existingRooms = _context.NhomPhong.Where(np => np.MaNhomDatPhong == existingGroup.MaNhomDatPhong);
+                    _context.NhomPhong.RemoveRange(existingRooms);
+
+                    if (request.MaPhong != null && request.MaPhong.Any())
+                    {
+                        foreach (var maPhong in request.MaPhong)
+                        {
+                            _context.NhomPhong.Add(new NhomPhong
+                            {
+                                MaNhomDatPhong = (int)existingGroup.MaNhomDatPhong,
+                                MaPhong = maPhong
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    return Ok(new { success = true, maNhomDatPhong = existingGroup.MaNhomDatPhong });
+                }
+
+                // Tạo nhóm mới
                 var entity = new NhomDatPhong
                 {
                     TenNhom = request.TenNhom,
@@ -723,21 +750,24 @@ namespace KhachSan.Controllers
                 _context.NhomDatPhong.Add(entity);
                 await _context.SaveChangesAsync();
 
-                foreach (var maPhong in request.MaPhong)
+                if (request.MaPhong != null && request.MaPhong.Any())
                 {
-                    _context.NhomPhong.Add(new NhomPhong
+                    foreach (var maPhong in request.MaPhong)
                     {
-                        MaNhomDatPhong = (int)entity.MaNhomDatPhong,
-                        MaPhong = maPhong
-                    });
+                        _context.NhomPhong.Add(new NhomPhong
+                        {
+                            MaNhomDatPhong = (int)entity.MaNhomDatPhong,
+                            MaPhong = maPhong
+                        });
+                    }
+                    await _context.SaveChangesAsync();
                 }
 
-                await _context.SaveChangesAsync();
-                return Ok(new { success = true, maNhomDatPhong = entity.MaNhomDatPhong }); // Trả về ID
+                return Ok(new { success = true, maNhomDatPhong = entity.MaNhomDatPhong });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi thêm nhóm: {Message}", ex.Message); // Thêm logging
+                _logger.LogError(ex, "Lỗi khi thêm nhóm: {Message}", ex.Message);
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
@@ -893,6 +923,36 @@ namespace KhachSan.Controllers
             }
         }
 
+        [HttpGet("GetRooms")]
+        [Authorize(Roles = "Nhân viên, Quản trị")]
+        public async Task<IActionResult> GetRooms()
+        {
+            try
+            {
+                var rooms = await _context.Phong
+                    .Include(p => p.LoaiPhong)
+                    .Where(p => !p.DangSuDung) // Chỉ lấy phòng trống
+                    .Select(p => new
+                    {
+                        MaPhong = p.MaPhong,
+                        SoPhong = p.SoPhong,
+                        DangSuDung = p.DangSuDung,
+                        TrangThai = p.DangSuDung ? "Đang sử dụng" : "Trống",
+                        LoaiPhong = p.LoaiPhong.TenLoaiPhong,
+                        GiaTheoGio = p.LoaiPhong.GiaTheoGio,
+                        GiaTheoNgay = p.LoaiPhong.GiaTheoNgay
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, rooms });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tải danh sách phòng: {Message}", ex.Message);
+                return StatusCode(500, new { success = false, message = $"Lỗi khi tải danh sách phòng: {ex.Message}" });
+            }
+        }
+
         public class UpdateDatPhongGroupModel
         {
             public int MaDatPhong { get; set; }
@@ -929,6 +989,7 @@ namespace KhachSan.Controllers
 
         public class NhomDatPhongRequest
         {
+            public int? MaNhomDatPhong { get; set; }
             public string TenNhom { get; set; }
             public string HoTenNguoiDaiDien { get; set; }
             public string SoDienThoaiNguoiDaiDien { get; set; }

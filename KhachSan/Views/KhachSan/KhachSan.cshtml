@@ -57,11 +57,12 @@
 
         <div class="room-list">
             <div class="toolbar">
-                <button onclick="openGroupModal()">Thêm vào nhóm</button>
+                <button onclick="openGroupModal()">Tạo đoàn du lịch</button>
+                <button onclick="redirectToGroupManagement()">Chọn phòng cho đoàn</button>
                 <button onclick="openMergeBillModal()">Gộp hóa đơn</button>
                 <!--<button>Gọi Bữa ăn</button>
                 <button>Chuyển Phòng</button>
-                <button>Đóng Phòng</button>    -->
+                <button>Đóng Phòng</button>-->
             </div>
             <div class="rooms">
                 @foreach (var room in Model)
@@ -118,7 +119,14 @@
                     </ul>
                 </nav>
             </div>
+
+
         </div>
+
+
+
+
+
 
         <span id="booking-room-id" style="display: none;"></span>
         <span id="booking-maphong" style="display: none;"></span>
@@ -251,16 +259,12 @@
             <button class="close-btn" onclick="closeGroupModal()">×</button>
             <h3>Thêm vào nhóm</h3>
             <div class="form">
-                <label for="group-name">Tên nhóm:</label>
-                <input type="text" id="group-name" placeholder="Tên nhóm">
+                <label for="group-name">Tên đoàn:</label>
+                <input type="text" id="group-name" placeholder="Tên đoàn" required>
                 <label for="group-representative">Người đại diện:</label>
-                <input type="text" id="group-representative" placeholder="Họ tên người đại diện">
+                <input type="text" id="group-representative" placeholder="Họ tên người đại diện" required>
                 <label for="group-phone">Số điện thoại:</label>
-                <input type="text" id="group-phone" placeholder="Số điện thoại">
-                <label>Chọn phòng:</label>
-                <div class="room-selection" id="group-room-selection">
-                    <!-- Danh sách phòng sẽ được thêm bằng JavaScript -->
-                </div>
+                <input type="text" id="group-phone" placeholder="Số điện thoại" required>
                 <div class="actions">
                     <button id="add-group-btn" onclick="addToGroup()">Thêm</button>
                     <button id="cancel-group-btn" onclick="closeGroupModal()">Hủy</button>

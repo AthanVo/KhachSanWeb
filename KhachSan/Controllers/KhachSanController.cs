@@ -128,5 +128,10 @@ namespace KhachSan.Controllers
                 return RedirectToAction("Index", "Home");
             }
         }
+
+        public IActionResult GroupManagement()
+        {
+            return View();
+        }
     }
 }

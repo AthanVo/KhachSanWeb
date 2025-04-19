@@ -198,80 +198,118 @@ function addToGroup() {
     const groupName = document.getElementById('group-name').value.trim();
     const representative = document.getElementById('group-representative').value.trim();
     const phone = document.getElementById('group-phone').value.trim();
-    const selectedRooms = Array.from(document.querySelectorAll('#group-room-selection input:checked')).map(input => parseInt(input.value));
 
-    if (!groupName || !representative || !phone || selectedRooms.length === 0) {
-        showToast('Vui lòng nhập đầy đủ thông tin và chọn ít nhất một phòng!', 'error');
+    if (!groupName || !representative || !phone) {
+        showToast('Vui lòng nhập đầy đủ thông tin đoàn!', 'error');
+        speak('Vui lòng nhập đầy đủ thông tin đoàn!');
         return;
     }
 
-    const rooms = document.querySelectorAll('.room');
-    const invalidRooms = selectedRooms.filter(roomId => {
-        const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId.toString());
-        return !room || !room.classList.contains('occupied') || !room.getAttribute('data-datphong-id');
-    });
-
-    if (invalidRooms.length > 0) {
-        showToast(`Các phòng ${invalidRooms.join(', ')} chưa được đặt, không thể thêm vào nhóm!`, 'error');
+    if (!/^\d{10,11}$/.test(phone)) {
+        showToast('Số điện thoại phải có 10-11 số!', 'error');
+        speak('Số điện thoại phải có 10-11 số!');
         return;
     }
 
-    const payload = {
-        TenNhom: groupName,
-        HoTenNguoiDaiDien: representative,
-        SoDienThoaiNguoiDaiDien: phone,
-        MaPhong: selectedRooms
-    };
-
-    console.log('Dữ liệu gửi lên:', payload);
-
-    fetch('https://localhost:5284/api/KhachSanAPI/add-group', {
-        method: 'POST',
+    // Kiểm tra trùng tên nhóm
+    fetch('https://localhost:5284/api/KhachSanAPI/groups', {
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        credentials: 'include'
     })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${err.message || 'Không có thông báo lỗi'}`);
-                });
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const maNhomDatPhong = data.maNhomDatPhong;
-                const datPhongs = [];
-                selectedRooms.forEach(roomId => {
-                    const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId.toString());
-                    const datPhongId = room.getAttribute('data-datphong-id');
-                    if (datPhongId) {
-                        datPhongs.push(parseInt(datPhongId));
-                        updateDatPhongWithGroup(datPhongId, maNhomDatPhong);
+            if (data.success && data.groups.some(group => group.name === groupName)) {
+                Swal.fire({
+                    title: 'Tên nhóm đã tồn tại',
+                    text: 'Tên đoàn này đã được sử dụng. Bạn có muốn tiếp tục tạo nhóm mới không?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Có, tiếp tục',
+                    cancelButtonText: 'Hủy'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        createGroup(groupName, representative, phone);
                     }
                 });
-
-                groupsData.push({
-                    id: maNhomDatPhong,
-                    name: groupName,
-                    representative: representative,
-                    phone: phone,
-                    rooms: selectedRooms,
-                    datPhongs: datPhongs // Lưu MaDatPhong
-                });
-                groupsData.sort((a, b) => a.id - b.id);
-                showToast('Thêm nhóm thành công!', 'success');
-                closeGroupModal();
-                updateGroupSelect();
             } else {
-                showToast(data.message || 'Có lỗi khi thêm nhóm!', 'error');
+                createGroup(groupName, representative, phone);
             }
         })
         .catch(error => {
-            console.error('Lỗi khi thêm nhóm:', error);
-            showToast(error.message, 'error');
+            console.error('Lỗi khi kiểm tra tên nhóm:', error);
+            showToast('Lỗi khi kiểm tra tên nhóm: ' + error.message, 'error');
+            speak('Lỗi khi kiểm tra tên nhóm: ' + error.message);
         });
+}
+
+function createGroup(groupName, representative, phone) {
+    Swal.fire({
+        title: 'Xác nhận tạo đoàn',
+        text: 'Bạn có chắc muốn tạo đoàn này không?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Có, tạo đoàn',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('https://localhost:5284/api/KhachSanAPI/add-group', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    TenNhom: groupName,
+                    HoTenNguoiDaiDien: representative,
+                    SoDienThoaiNguoiDaiDien: phone,
+                    MaPhong: []
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        closeGroupModal();
+                        showToast(`Tạo đoàn thành công! Mã nhóm: ${data.maNhomDatPhong}`, 'success');
+                        speak(`Tạo đoàn thành công! Mã nhóm: ${data.maNhomDatPhong}`);
+                        // Cập nhật danh sách nhóm
+                        loadGroups();
+                    } else {
+                        showToast(data.message || 'Có lỗi khi tạo đoàn!', 'error');
+                        speak(data.message || 'Có lỗi khi tạo đoàn!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tạo đoàn:', error);
+                    if (error.message.includes('401')) {
+                        Swal.fire({
+                            title: 'Chưa đăng nhập',
+                            text: 'Bạn cần đăng nhập để thêm nhóm!',
+                            icon: 'warning',
+                            confirmButtonText: 'Đăng nhập'
+                        }).then(() => {
+                            window.location.href = '/TaiKhoan/DangNhap';
+                        });
+                    } else {
+                        showToast('Đã xảy ra lỗi khi thêm nhóm: ' + error.message, 'error');
+                        speak('Đã xảy ra lỗi khi thêm nhóm: ' + error.message);
+                    }
+                });
+        }
+    });
+}
+
+function closeGroupModal() {
+    document.getElementById('groupModal').style.display = 'none';
+}
+
+function openGroupModal() {
+    document.getElementById('groupModal').style.display = 'block';
 }
 
 // Gộp hóa đơn
@@ -361,7 +399,55 @@ function updateDatPhongWithGroup(datPhongId, maNhomDatPhong) {
         });
 }
 
+function redirectToGroupManagement() {
+    fetch('https://localhost:5284/api/KhachSanAPI/groups', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+    })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.groups && data.groups.length > 0) {
+                // Hiển thị danh sách nhóm để chọn
+                Swal.fire({
+                    title: 'Chọn nhóm',
+                    input: 'select',
+                    inputOptions: data.groups.reduce((options, group) => {
+                        options[group.id] = group.name;
+                        return options;
+                    }, {}),
+                    inputPlaceholder: 'Chọn một nhóm',
+                    showCancelButton: true,
+                    confirmButtonText: 'Tiếp tục',
+                    cancelButtonText: 'Hủy',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Vui lòng chọn một nhóm!';
+                        }
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const maNhomDatPhong = result.value;
+                        window.location.href = `/KhachSan/GroupManagement?maNhomDatPhong=${maNhomDatPhong}`;
+                    }
+                });
+            } else {
+                showToast('Không có nhóm nào để chọn! Vui lòng tạo nhóm trước.', 'error');
+                speak('Không có nhóm nào để chọn! Vui lòng tạo nhóm trước.');
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi khi tải danh sách nhóm:', error);
+            showToast('Lỗi khi tải danh sách nhóm: ' + error.message, 'error');
+            speak('Lỗi khi tải danh sách nhóm: ' + error.message);
+        });
+}
+
 // Khởi tạo khi trang tải
 document.addEventListener('DOMContentLoaded', function () {
     loadGroups();
 });
+
