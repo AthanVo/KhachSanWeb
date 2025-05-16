@@ -291,5 +291,19 @@ namespace KhachSan.Controllers
             TempData["Success"] = "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.";
             return RedirectToAction("Dangnhap");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            // Xóa session
+            HttpContext.Session.Clear();
+
+            // Hủy xác thực (sign out) của cookie
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Chuyển hướng về trang chủ hoặc trang đăng nhập
+            return RedirectToAction("Index", "Home");
+        }
+
     }
 }

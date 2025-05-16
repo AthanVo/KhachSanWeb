@@ -570,50 +570,58 @@
         }
 
         // Load group information
-        function loadGroupInfo() {
-          maNhomDatPhong = getQueryParam('maNhomDatPhong');
-          if (!maNhomDatPhong) {
-            showToast('Không tìm thấy thông tin đoàn! Vui lòng chọn nhóm trước.', 'error');
-            speak('Không tìm thấy thông tin đoàn! Vui lòng chọn nhóm trước.');
-            setTimeout(() => {
-              window.location.href = '/KhachSan';
-            }, 2000);
-            return;
-          }
+                function loadGroupInfo() {
+            maNhomDatPhong = getQueryParam('maNhomDatPhong');
+            if (!maNhomDatPhong) {
+                showToast('Không tìm thấy thông tin đoàn! Vui lòng chọn nhóm trước.', 'error');
+                speak('Không tìm thấy thông tin đoàn! Vui lòng chọn nhóm trước.');
+                setTimeout(() => {
+                    window.location.href = '/KhachSan';
+                }, 2000);
+                return;
+            }
 
-          fetch(`https://localhost:5284/api/KhachSanAPI/groups`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
-          })
-            .then(response => {
-              if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-              return response.json();
+            // Làm mới currentRoomCustomers
+            currentRoomCustomers = {};
+
+            fetch(`https://localhost:5284/api/KhachSanAPI/groups`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
             })
-            .then(data => {
-              if (data.success && data.groups) {
-                const group = data.groups.find(g => g.id == maNhomDatPhong);
-                if (group) {
-                  document.getElementById('group-name').value = group.name || '';
-                  document.getElementById('group-representative').value = group.representative || '';
-                  document.getElementById('group-phone').value = group.phone || '';
-                  loadAvailableRooms();
-                  loadAssignedRooms();
-                } else {
-                  throw new Error('Không tìm thấy đoàn!');
-                }
-              } else {
-                throw new Error('Không thể tải thông tin đoàn!');
-              }
-            })
-            .catch(error => {
-              console.error('Lỗi khi tải thông tin đoàn:', error);
-              showToast('Lỗi khi tải thông tin đoàn: ' + error.message, 'error');
-              speak('Lỗi khi tải thông tin đoàn: ' + error.message);
-              setTimeout(() => {
-                window.location.href = '/KhachSan';
-              }, 2000);
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Không tìm thấy endpoint /groups. Vui lòng kiểm tra server backend.');
+                        }
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.groups) {
+                        const group = data.groups.find(g => g.id == maNhomDatPhong);
+                        if (group) {
+                            document.getElementById('group-name').value = group.name || '';
+                            document.getElementById('group-representative').value = group.representative || '';
+                            document.getElementById('group-phone').value = group.phone || '';
+                            loadAvailableRooms();
+                            loadAssignedRooms();
+                        } else {
+                            throw new Error('Không tìm thấy đoàn!');
+                        }
+                    } else {
+                        throw new Error('Không thể tải thông tin đoàn!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tải thông tin đoàn:', error);
+                    showToast('Lỗi khi tải thông tin đoàn: ' + error.message, 'error');
+                    speak('Lỗi khi tải thông tin đoàn: ' + error.message);
+                    setTimeout(() => {
+                        window.location.href = '/KhachSan';
+                    }, 2000);
+                });
         }
 
         // Load available rooms for customer assignment
@@ -680,7 +688,7 @@
         }
 
         // Load rooms already assigned to the group
-        function loadAssignedRooms() {
+                function loadAssignedRooms() {
             fetch(`https://localhost:5284/api/KhachSanAPI/groups`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
@@ -712,7 +720,8 @@
                             roomSelection.innerHTML = '';
                             if (data.success && data.rooms) {
                                 data.rooms.forEach(room => {
-                                    if (!room.dangSuDung) { // Chỉ hiển thị phòng trống
+                                    // Chỉ hiển thị phòng trống và không còn liên kết với nhóm đã thanh toán
+                                    if (!room.dangSuDung) {
                                         const div = document.createElement('div');
                                         div.className = 'room-checkbox';
                                         const isChecked = assignedRoomIds.includes(room.maPhong.toString());
@@ -746,62 +755,86 @@
         }
 
         // Save rooms for group
-        function saveRoomsForGroup() {
-          const roomSelection = document.getElementById('room-selection');
-          const selectedRooms = Array.from(roomSelection.querySelectorAll('input[type="checkbox"]:checked'))
-            .map(checkbox => parseInt(checkbox.value));
+                function saveRoomsForGroup() {
+            const roomSelection = document.getElementById('room-selection');
+            const selectedRooms = Array.from(roomSelection.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(checkbox => parseInt(checkbox.value));
 
-          if (selectedRooms.length === 0) {
-            showToast('Vui lòng chọn ít nhất một phòng!', 'error');
-            speak('Vui lòng chọn ít nhất một phòng!');
-            return;
-          }
-
-          Swal.fire({
-            title: 'Xác nhận lưu phòng',
-            text: 'Bạn có chắc muốn liên kết các phòng này với nhóm không?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Có, lưu',
-            cancelButtonText: 'Hủy'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              fetch('https://localhost:5284/api/KhachSanAPI/add-group', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  TenNhom: document.getElementById('group-name').value.trim(),
-                  HoTenNguoiDaiDien: document.getElementById('group-representative').value.trim(),
-                  SoDienThoaiNguoiDaiDien: document.getElementById('group-phone').value.trim(),
-                  MaPhong: selectedRooms
-                })
-              })
-                .then(response => {
-                  if (!response.ok) {
-                    return response.json().then(err => {
-                      throw new Error(err.message || `HTTP error! Status: ${response.status}`);
-                    });
-                  }
-                  return response.json();
-                })
-                .then(data => {
-                  if (data.success) {
-                    showToast('Liên kết phòng với nhóm thành công!', 'success');
-                    speak('Liên kết phòng với nhóm thành công!');
-                    loadAvailableRooms(); // Cập nhật danh sách phòng khả dụng
-                  } else {
-                    showToast(data.message || 'Lỗi khi liên kết phòng với nhóm!', 'error');
-                    speak(data.message || 'Lỗi khi liên kết phòng với nhóm!');
-                  }
-                })
-                .catch(error => {
-                  console.error('Lỗi khi liên kết phòng với nhóm:', error);
-                  showToast('Lỗi khi liên kết phòng với nhóm: ' + error.message, 'error');
-                  speak('Lỗi khi liên kết phòng với nhóm: ' + error.message);
-                });
+            if (selectedRooms.length === 0) {
+                showToast('Vui lòng chọn ít nhất một phòng!', 'error');
+                speak('Vui lòng chọn ít nhất một phòng!');
+                return;
             }
-          });
+
+            const checkinDate = document.getElementById('checkin-date').value;
+            const checkoutDate = document.getElementById('checkout-date').value;
+
+            if (!checkinDate || !checkoutDate) {
+                showToast('Vui lòng nhập đầy đủ ngày nhận phòng và ngày trả phòng!', 'error');
+                speak('Vui lòng nhập đầy đủ ngày nhận phòng và ngày trả phòng!');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            if (checkinDate < today) {
+                showToast('Ngày nhận phòng phải từ hôm nay trở đi!', 'error');
+                speak('Ngày nhận phòng phải từ hôm nay trở đi!');
+                return;
+            }
+
+            if (checkoutDate <= checkinDate) {
+                showToast('Ngày trả phòng phải sau ngày nhận phòng!', 'error');
+                speak('Ngày trả phòng phải sau ngày nhận phòng!');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Xác nhận lưu phòng',
+                text: 'Bạn có chắc muốn liên kết các phòng này với nhóm không?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Có, lưu',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('https://localhost:5284/api/KhachSanAPI/add-group', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            TenNhom: document.getElementById('group-name').value.trim(),
+                            HoTenNguoiDaiDien: document.getElementById('group-representative').value.trim(),
+                            SoDienThoaiNguoiDaiDien: document.getElementById('group-phone').value.trim(),
+                            MaPhong: selectedRooms,
+                            NgayNhanPhong: checkinDate, // Gửi ngày nhận phòng
+                            NgayTraPhong: checkoutDate  // Gửi ngày trả phòng
+                        })
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => {
+                                    throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                showToast('Liên kết phòng với nhóm thành công!', 'success');
+                                speak('Liên kết phòng với nhóm thành công!');
+                                loadAvailableRooms(); // Cập nhật danh sách phòng khả dụng
+                            } else {
+                                showToast(data.message || 'Lỗi khi liên kết phòng với nhóm!', 'error');
+                                speak(data.message || 'Lỗi khi liên kết phòng với nhóm!');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi khi liên kết phòng với nhóm:', error);
+                            showToast('Lỗi khi liên kết phòng với nhóm: ' + error.message, 'error');
+                            speak('Lỗi khi liên kết phòng với nhóm: ' + error.message);
+                        });
+                }
+            });
         }
 
         // Scan CCCD
@@ -1131,97 +1164,137 @@
           });
         });
 
-        function saveGroupData() {
-          const customerTable = document.getElementById('customer-table').querySelector('tbody');
-          const customers = Array.from(customerTable.rows).map(row => ({
-            soGiayTo: row.cells[3].textContent,
-            hoTen: row.cells[1].textContent,
-            gioiTinh: row.cells[2].textContent,
-            diaChi: 'N/A',
-            quocTich: 'Việt Nam'
-          }));
+                    function saveGroupData() {
+            const customerTable = document.getElementById('customer-table').querySelector('tbody');
+            const customers = Array.from(customerTable.rows).map(row => ({
+                soGiayTo: row.cells[3].textContent,
+                hoTen: row.cells[1].textContent,
+                gioiTinh: row.cells[2].textContent,
+                diaChi: 'N/A',
+                quocTich: 'Việt Nam'
+            }));
 
-          const roomAssignments = Object.entries(currentRoomCustomers).map(([maPhong, customers]) => ({
-            maPhong: parseInt(maPhong),
-            customers: customers.map(c => ({
-              soGiayTo: c.cccd,
-              hoTen: c.name,
-              gioiTinh: c.gender,
-              diaChi: 'N/A',
-              quocTich: 'Việt Nam'
-            }))
-          }));
+            const roomAssignments = Object.entries(currentRoomCustomers).map(([maPhong, customers]) => ({
+                maPhong: parseInt(maPhong),
+                customers: customers.map(c => ({
+                    soGiayTo: c.cccd,
+                    hoTen: c.name,
+                    gioiTinh: c.gender,
+                    diaChi: 'N/A',
+                    quocTich: 'Việt Nam'
+                }))
+            }));
 
-          // Step 1: Save customers and create DatPhong
-          const customerPromises = customers.concat(...roomAssignments.flatMap(r => r.customers))
-            .filter((c, i, arr) => arr.findIndex(x => x.soGiayTo === c.soGiayTo) === i)
-            .map(customer => {
-              const matchingRoom = roomAssignments.find(r => r.customers.some(c => c.soGiayTo === customer.soGiayTo));
-              const maPhong = matchingRoom ? matchingRoom.maPhong : 0;
+            const customersWithoutRoom = customers.filter(customer =>
+                !roomAssignments.some(r => r.customers.some(c => c.soGiayTo === customer.soGiayTo))
+            );
 
-              return fetch('https://localhost:5284/api/KhachSanAPI/BookRoom', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  MaPhong: maPhong,
-                  LoaiGiayTo: 'CCCD',
-                  SoGiayTo: customer.soGiayTo,
-                  HoTen: customer.hoTen,
-                  DiaChi: customer.diaChi,
-                  QuocTich: customer.quocTich,
-                  LoaiDatPhong: 'Theo ngày'
-                })
-              })
-                .then(response => {
-                  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                  return response.json();
-                })
-                .then(data => ({ success: data.success, maDatPhong: data.maDatPhong, customer, maPhong }));
-            });
-
-          Promise.all(customerPromises)
-            .then(results => {
-              const failed = results.filter(r => !r.success);
-              if (failed.length > 0) {
-                showToast('Lỗi khi lưu một số khách!', 'error');
-                speak('Lỗi khi lưu một số khách!');
+            if (customersWithoutRoom.length > 0) {
+                const customerNames = customersWithoutRoom.map(c => c.hoTen).join(', ');
+                showToast(`Vui lòng phân phòng cho các khách sau trước khi lưu: ${customerNames}`, 'error');
+                speak(`Vui lòng phân phòng cho các khách sau trước khi lưu: ${customerNames}`);
                 return;
-              }
+            }
 
-              // Step 2: Update NhomDatPhong for each DatPhong
-              const updatePromises = results.map(result => {
-                return fetch('https://localhost:5284/api/KhachSanAPI/UpdateDatPhongGroup', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify({
-                    MaDatPhong: result.maDatPhong,
-                    MaNhomDatPhong: maNhomDatPhong
-                  })
-                })
-                  .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    return response.json();
-                  })
-                  .then(data => {
-                    if (!data.success) throw new Error(data.message || 'Lỗi khi cập nhật nhóm cho đặt phòng');
-                    return result;
-                  });
-              });
+            const checkinDate = document.getElementById('checkin-date').value;
+            if (!checkinDate) {
+                showToast('Vui lòng nhập ngày nhận phòng trước khi lưu khách!', 'error');
+                speak('Vui lòng nhập ngày nhận phòng trước khi lưu khách!');
+                return;
+            }
 
-              return Promise.all(updatePromises);
-            })
-            .then(results => {
-              showToast('Lưu thông tin khách thành công!', 'success');
-              speak('Lưu thông tin khách thành công!');
-              window.location.href = '/KhachSan/KhachSan'; // Chuyển hướng đúng
-            })
-            .catch(error => {
-              console.error('Lỗi khi lưu dữ liệu:', error);
-              showToast('Lỗi khi lưu dữ liệu: ' + error.message, 'error');
-              speak('Lỗi khi lưu dữ liệu: ' + error.message);
+            Swal.fire({
+                title: 'Đang lưu...',
+                text: 'Vui lòng đợi trong giây lát.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
             });
+
+            const customerPromises = customers.concat(...roomAssignments.flatMap(r => r.customers))
+                .filter((c, i, arr) => arr.findIndex(x => x.soGiayTo === c.soGiayTo) === i)
+                .map(customer => {
+                    const matchingRoom = roomAssignments.find(r => r.customers.some(c => c.soGiayTo === customer.soGiayTo));
+                    const maPhong = matchingRoom ? matchingRoom.maPhong : 0;
+
+                    return fetch('https://localhost:5284/api/KhachSanAPI/BookRoom', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            MaPhong: maPhong,
+                            LoaiGiayTo: 'CCCD',
+                            SoGiayTo: customer.soGiayTo,
+                            HoTen: customer.hoTen,
+                            DiaChi: customer.diaChi,
+                            QuocTich: customer.quocTich,
+                            LoaiDatPhong: 'Theo ngày',
+                            NgayNhanPhongDuKien: checkinDate // Gửi ngày nhận phòng dự kiến
+                        })
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => {
+                                    throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => ({ success: data.success, maDatPhong: data.maDatPhong, customer, maPhong }));
+                });
+
+            Promise.all(customerPromises)
+                .then(results => {
+                    const failed = results.filter(r => !r.success);
+                    if (failed.length > 0) {
+                        Swal.close();
+                        showToast('Lỗi khi lưu một số khách!', 'error');
+                        speak('Lỗi khi lưu một số khách!');
+                        return;
+                    }
+
+                    const updatePromises = results.map(result => {
+                        return fetch('https://localhost:5284/api/KhachSanAPI/UpdateDatPhongGroup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                MaDatPhong: result.maDatPhong,
+                                MaNhomDatPhong: maNhomDatPhong
+                            })
+                        })
+                            .then(response => {
+                                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (!data.success) throw new Error(data.message || 'Lỗi khi cập nhật nhóm cho đặt phòng');
+                                return result;
+                            });
+                    });
+
+                    return Promise.all(updatePromises);
+                })
+                        .then(results => {
+            
+            showToast('Lưu thông tin khách thành công!', 'success');
+            speak('Lưu thông tin khách thành công!');
+            currentRoomCustomers = {};
+            // Làm mới phòng khi quay lại KhachSan.cshtml
+            window.location.href = '/KhachSan/KhachSan';
+            setTimeout(() => {
+                if (window.opener && window.opener.refreshRooms) {
+                    window.opener.refreshRooms();
+                }
+            }, 500);
+        })
+                .catch(error => {
+                    Swal.close();
+                    console.error('Lỗi khi lưu dữ liệu:', error);
+                    showToast('Lỗi khi lưu dữ liệu: ' + error.message, 'error');
+                    speak('Lỗi khi lưu dữ liệu: ' + error.message);
+                });
         }
 
         // Reset customer info

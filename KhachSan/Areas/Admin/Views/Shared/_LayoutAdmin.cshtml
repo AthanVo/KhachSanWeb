@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Hệ thống quản lý khách sạn">
+    <meta name="author" content="">
+    <title>Quản lý khách sạn</title>
+    <!-- Custom fonts for this template-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+    <!-- Custom styles for this template-->
+    <link href="~/css/sb-admin-2.min.css" rel="stylesheet" />
+
+</head>
+<style>
+    a {
+        text-decoration: none; /* Bỏ gạch chân của link */
+    }
+
+    .sidebar-heading {
+        font-size: 1.5rem; /* Tăng kích thước chữ */
+        font-weight: bold; /* Làm chữ đậm */
+        color: #ffffff; /* Màu chữ */
+        background-color: #007bff; /* Màu nền */
+        text-align: center; /* Căn giữa chữ */
+        padding: 10px 20px; /* Thêm khoảng cách bên trong */
+        border-radius: 5px; /* Làm bo góc */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Thêm hiệu ứng đổ bóng */
+        transition: all 0.3s ease; /* Hiệu ứng chuyển đổi mượt */
+    }
+
+        .sidebar-heading:hover {
+            background-color: #0056b3; /* Màu nền khi hover */
+            transform: scale(1.05); /* Phóng to nhẹ khi hover */
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Tăng đổ bóng khi hover */
+        }
+</style>
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+            <!-- Sidebar - Brand -->
+            <hr class="sidebar-divider my-0">
+
+            <!-- Nav Item - Dashboard -->
+            <li class="nav-item active"></li>
+            <hr class="sidebar-divider">
+
+            <a href="/Admin/TrangChu/Index">
+                <div class="sidebar-heading">Admin</div>
+            </a>
+
+            <hr class="sidebar-divider">
+
+            <!-- Addons -->
+            <div class="sidebar-heading">Quản lý</div>
+
+            <!-- Số lượng phòng -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/Phong/Index">
+                    <i class="fas fa-bed"></i>
+                    <span>Danh sách phòng</span>
+                </a>
+            </li>
+
+            <!-- Số lượng khách hàng -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/KhachHang/Index">
+                    <i class="fas fa-user-check"></i>
+                    <span>Khách hàng</span>
+                </a>
+            </li>
+
+            <!-- Số lượng đặt phòng -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/DatPhong/Index">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Đặt phòng</span>
+                </a>
+            </li>
+
+            <!-- Số lượng loại phòng -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/LoaiPhong/Index">
+                    <i class="fas fa-door-open"></i>
+                    <span>Loại phòng</span>
+                </a>
+            </li>
+
+            <!-- Số lượng dịch vụ -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/DichVu/Index">
+                    <i class="fas fa-concierge-bell"></i>
+                    <span>Dịch vụ</span>
+                </a>
+            </li>
+
+            <!-- Tổng doanh thu -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/DoanhThu/Index">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Doanh thu</span>
+                </a>
+            </li>
+
+            <!-- Số lượng mã khuyến mãi -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/MaKhuyenMai/Index">
+                    <i class="fas fa-percent"></i>
+                    <span>Mã khuyến mãi</span>
+                </a>
+            </li>
+
+            <!-- Chi tiết đặt phòng -->
+            <li class="nav-item">
+                <a class="nav-link" href="/Admin/ChiTietDatPhong/Index">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Chi tiết đặt phòng</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider d-none d-md-block">
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+        </ul>
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Main Content -->
+            <div id="content">
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <form method="get" action="@Url.Action("Search", "TrangChu")" class="navbar-search d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100">
+                        <div class="input-group">
+                            <!-- Input trường tìm kiếm -->
+                            <input type="text" name="query" class="form-control bg-light border-0 small"
+                                   placeholder="Tìm kiếm phòng, khách hàng..." aria-label="Search" aria-describedby="basic-addon2"
+                                   
+
+                            <!-- Nút submit -->
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search fa-sm"></i> Tìm
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- User Section -->
+                    <ul class="navbar-nav d-flex align-items-center">
+                        <!-- Link Trang đặt phòng -->
+                        <li class="nav-item me-3">
+                            
+                        </li>
+
+                        <!-- Tên người dùng -->
+                        <li class="nav-item me-3">
+                           
+                        </li>
+
+                        <!-- Đăng xuất -->
+                        <li class="nav-item">
+                          
+                        </li>
+                    </ul>
+                </nav>
+
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- JavaScript-->
+    <script src="~/Content/admin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/admin/vendor/jquery/jquery.min.js"></script>
+    <script src="~/Content/admin/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="~/Content/admin/js/sb-admin-2.min.js"></script>
+    <script src="~/Content/admin/vendor/chart.js/Chart.min.js"></script>
+    <script src="~/Content/admin/js/demo/chart-area-demo.js"></script>
+
+</body>
+</html>

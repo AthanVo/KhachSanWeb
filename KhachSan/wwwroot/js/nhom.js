@@ -14,6 +14,7 @@ const mergeTotalServices = document.getElementById('merge-total-services');
 const mergeTotalRoom = document.getElementById('merge-total-room');
 const mergeTotal = document.getElementById('merge-total');
 const groupSelect = document.getElementById('group-select');
+const mergeRentalDays = document.getElementById('merge-rental-days');
 
 // Hàm hiển thị thông báo toast
 function showToast(message, type = 'success') {
@@ -62,8 +63,10 @@ function loadGroups() {
                         name: group.name,
                         representative: group.representative,
                         phone: group.phone,
-                        rooms: group.rooms, // MaPhong
-                        datPhongs: group.datPhongs || [] // Thêm MaDatPhong
+                        ngayNhanPhong: group.ngayNhanPhong,
+                        ngayTraPhong: group.ngayTraPhong,
+                        rooms: group.rooms,
+                        datPhongs: group.datPhongs || []
                     }))
                     .sort((a, b) => a.id - b.id);
                 console.log('Danh sách nhóm đã tải:', groupsData);
@@ -103,8 +106,8 @@ function openMergeBillModal() {
         return;
     }
 
-    updateGroupSelect(); // Điền danh sách nhóm vào dropdown
-    updateMergeBillDetails(); // Hiển thị chi tiết nhóm đầu tiên
+    updateGroupSelect();
+    updateMergeBillDetails();
     mergeBillModal.style.display = 'block';
 }
 
@@ -132,7 +135,21 @@ function updateMergeBillDetails() {
     mergeGroupRepresentative.textContent = group.representative || 'N/A';
     mergeGroupPhone.textContent = group.phone || 'N/A';
 
-    // Dùng MaDatPhong thay vì MaPhong
+    // Tính số ngày thuê
+    let rentalDays = 'N/A';
+    if (group.ngayNhanPhong && group.ngayTraPhong) {
+        try {
+            const checkInDate = new Date(group.ngayNhanPhong);
+            const checkOutDate = new Date(group.ngayTraPhong);
+            const timeDiff = checkOutDate - checkInDate;
+            rentalDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) || 1; // Làm tròn lên, ít nhất 1 ngày
+        } catch (error) {
+            console.error('Lỗi khi tính số ngày thuê:', error);
+            rentalDays = 'N/A';
+        }
+    }
+    mergeRentalDays.textContent = rentalDays; // Hiển thị số ngày thuê
+
     const url = `https://localhost:5284/api/KhachSanAPI/GetRoomServices?${group.datPhongs.map(datPhongId => `maDatPhong=${datPhongId}`).join('&')}`;
     fetch(url, {
         method: 'GET',
@@ -152,24 +169,39 @@ function updateMergeBillDetails() {
                 group.rooms.forEach(roomId => {
                     const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId);
                     if (room) {
-                        const price = parseInt(room.getAttribute('data-price')?.replace(/[^0-9]/g, '') || '0');
+                        // Quay lại cách lấy giá từ data-price
+                        const basePrice = parseInt(room.getAttribute('data-price')?.replace(/[^0-9]/g, '') || '0');
                         const billId = room.getAttribute('data-bill-id') || 'N/A';
                         const datPhongId = room.getAttribute('data-datphong-id');
+
+                        // Tính số ngày từ ngayNhanPhong và ngayTraPhong
+                        const checkInDate = new Date(room.getAttribute('data-checkin') || group.ngayNhanPhong);
+                        const checkOutDate = new Date(room.getAttribute('data-checkout') || group.ngayTraPhong || new Date());
+                        const timeDiff = checkOutDate - checkInDate;
+                        const days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) || 1;
+
+                        // Tính giá phòng theo số ngày
+                        const price = basePrice * days;
+                        const displayText = `${price.toLocaleString()}đ (${days} ngày)`;
+
                         const services = data.services.filter(s => s.maDatPhong === parseInt(datPhongId));
                         let roomServicesTotal = services.reduce((sum, s) => sum + (s.thanhTien || 0), 0);
+
                         totalServices += roomServicesTotal;
                         totalRoom += price;
+
                         mergeBillRooms.innerHTML += `
                             <tr>
                                 <td>${roomId}</td>
                                 <td>${billId}</td>
-                                <td>${price.toLocaleString()}đ</td>
+                                <td>${displayText}</td>
                                 <td>${roomServicesTotal.toLocaleString()}đ</td>
                                 <td>${(price + roomServicesTotal).toLocaleString()}đ</td>
                             </tr>
                         `;
                     }
                 });
+
                 mergeTotalServices.textContent = totalServices.toLocaleString() + 'đ';
                 mergeTotalRoom.textContent = totalRoom.toLocaleString() + 'đ';
                 mergeTotal.textContent = (totalServices + totalRoom).toLocaleString() + 'đ';
@@ -211,7 +243,6 @@ function addToGroup() {
         return;
     }
 
-    // Kiểm tra trùng tên nhóm
     fetch('https://localhost:5284/api/KhachSanAPI/groups', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -277,7 +308,6 @@ function createGroup(groupName, representative, phone) {
                         closeGroupModal();
                         showToast(`Tạo đoàn thành công! Mã nhóm: ${data.maNhomDatPhong}`, 'success');
                         speak(`Tạo đoàn thành công! Mã nhóm: ${data.maNhomDatPhong}`);
-                        // Cập nhật danh sách nhóm
                         loadGroups();
                     } else {
                         showToast(data.message || 'Có lỗi khi tạo đoàn!', 'error');
@@ -316,59 +346,71 @@ function openGroupModal() {
 function mergeBill() {
     const groupId = parseInt(groupSelect.value);
     const note = "Gộp hóa đơn cho nhóm " + mergeGroupName.textContent;
+    const total = mergeTotal.textContent;
 
     if (isNaN(groupId) || groupId <= 0) {
         showToast('Mã nhóm đặt phòng không hợp lệ!', 'error');
         return;
     }
 
-    const payload = {
-        MaNhomDatPhong: groupId,
-        GhiChu: note
-    };
+    // Hiển thị hộp thoại xác nhận thanh toán
+    Swal.fire({
+        title: 'Xác nhận thanh toán',
+        html: `Bạn có chắc muốn thanh toán hóa đơn cho nhóm <strong>${mergeGroupName.textContent}</strong>?<br>Tổng tiền: <strong>${total}</strong>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Có, thanh toán',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const payload = {
+                MaNhomDatPhong: groupId,
+                GhiChu: note
+            };
 
-    console.log('Dữ liệu gửi lên:', payload);
+            console.log('Dữ liệu gửi lên:', payload);
 
-    fetch('https://localhost:5284/api/KhachSanAPI/merge-bill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-    })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${err.message || 'Không có thông báo lỗi'}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                const total = mergeTotal.textContent;
-                showToast(data.message, 'success');
-                closeMergeBillModal();
-                const rooms = document.querySelectorAll('.room');
-                groupsData.find(g => g.id === groupId).rooms.forEach(roomId => {
-                    const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId);
-                    if (room) {
-                        room.classList.remove('occupied');
-                        room.querySelector('.status').textContent = 'Trống';
-                        room.querySelector('.door-icon').classList.remove('fa-door-open');
-                        room.querySelector('.door-icon').classList.add('fa-door-closed');
-                        room.removeAttribute('data-datphong-id');
+            fetch('https://localhost:5284/api/KhachSanAPI/merge-bill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(`HTTP error! Status: ${response.status}, Message: ${err.message || 'Không có thông báo lỗi'}`);
+                        });
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        closeMergeBillModal();
+                        const rooms = document.querySelectorAll('.room');
+                        groupsData.find(g => g.id === groupId).rooms.forEach(roomId => {
+                            const room = Array.from(rooms).find(r => r.getAttribute('data-room-id') === roomId);
+                            if (room) {
+                                room.classList.remove('occupied');
+                                room.querySelector('.status').textContent = 'Trống';
+                                room.querySelector('.door-icon').classList.remove('fa-door-open');
+                                room.querySelector('.door-icon').classList.add('fa-door-closed');
+                                room.removeAttribute('data-datphong-id');
+                            }
+                        });
+                        groupsData = groupsData.filter(g => g.id !== groupId);
+                        updateGroupSelect();
+                    } else {
+                        showToast(data.message || 'Có lỗi khi gộp hóa đơn!', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi gộp hóa đơn:', error);
+                    showToast(error.message, 'error');
                 });
-                groupsData = groupsData.filter(g => g.id !== groupId);
-                updateGroupSelect(); // Cập nhật dropdown sau khi thanh toán
-            } else {
-                showToast(data.message || 'Có lỗi khi gộp hóa đơn!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Lỗi khi gộp hóa đơn:', error);
-            showToast(error.message, 'error');
-        });
+        }
+    });
 }
 
 // Hàm phụ để cập nhật MaNhomDatPhong trong DatPhong
@@ -411,7 +453,6 @@ function redirectToGroupManagement() {
         })
         .then(data => {
             if (data.success && data.groups && data.groups.length > 0) {
-                // Hiển thị danh sách nhóm để chọn
                 Swal.fire({
                     title: 'Chọn nhóm',
                     input: 'select',
@@ -450,4 +491,3 @@ function redirectToGroupManagement() {
 document.addEventListener('DOMContentLoaded', function () {
     loadGroups();
 });
-

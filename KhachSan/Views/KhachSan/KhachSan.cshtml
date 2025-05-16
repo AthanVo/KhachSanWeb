@@ -277,13 +277,14 @@
             <h3>Gộp hóa đơn cho nhóm</h3>
             <div class="info">
                 <label for="group-select">Chọn nhóm:</label>
-                <select id="group-select" onchange="updateMergeBillDetails()">
-                    <!-- Các nhóm sẽ được thêm bằng JavaScript -->
-                </select>
+                <select id="group-select" onchange="updateMergeBillDetails()"></select>
+                
                 <p>Mã nhóm: <span id="merge-group-id"></span></p>
                 <p>Tên nhóm: <span id="merge-group-name"></span></p>
                 <p>Người đại diện: <span id="merge-group-representative"></span></p>
                 <p>Số điện thoại: <span id="merge-group-phone"></span></p>
+                <!-- Thay đổi để hiển thị số ngày thuê -->
+                <p>Ngày đặt phòng: <span id="merge-rental-days"></span> ngày</p>
             </div>
             <table>
                 <thead>
@@ -295,9 +296,7 @@
                         <th>Tổng tiền</th>
                     </tr>
                 </thead>
-                <tbody id="merge-bill-rooms">
-                    <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
-                </tbody>
+                <tbody id="merge-bill-rooms"></tbody>
             </table>
             <div class="summary">
                 <div>
@@ -310,6 +309,7 @@
             </div>
             <div class="actions">
                 <button onclick="mergeBill()">Thanh toán</button>
+                <button onclick="closeMergeBillModal()">Hủy</button>
             </div>
         </div>
 
@@ -400,6 +400,25 @@
                 document.querySelector('.toggle-dark-mode').innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
             }
         });
+
+                document.addEventListener('DOMContentLoaded', function () {
+            // Gọi API cập nhật trạng thái phòng
+            fetch('https://localhost:5284/api/KhachSanAPI/UpdateRoomStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Đã cập nhật trạng thái phòng:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi khi cập nhật trạng thái phòng:', error);
+                });
+
+            
     </script>
 </body>
 </html>

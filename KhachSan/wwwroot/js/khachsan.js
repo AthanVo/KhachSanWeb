@@ -763,6 +763,10 @@ function processPayment() {
                         room.querySelector('.door-icon').classList.remove('fa-door-open');
                         room.querySelector('.door-icon').classList.add('fa-door-closed');
                         room.removeAttribute('data-datphong-id');
+                        room.removeAttribute('data-customer');
+                        room.removeAttribute('data-checkin');
+                        room.removeAttribute('data-staff');
+                        room.removeAttribute('data-staff-id');
 
                         billingStatus.textContent = data.hoaDonTrangThaiThanhToan || 'Đã thanh toán';
                         billingDatphongStatus.textContent = data.datPhongTrangThaiThanhToan || 'Đã thanh toán';
@@ -775,6 +779,11 @@ function processPayment() {
                             text: `Thanh toán thành công! Tổng tiền: ${data.tongTien.toLocaleString('vi-VN')}đ`,
                             icon: 'success',
                             confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Làm mới danh sách nhóm trong nhom.js nếu có
+                            if (typeof loadGroups === 'function') {
+                                loadGroups();
+                            }
                         });
                     } else {
                         Swal.fire({
@@ -959,3 +968,57 @@ function addToGroup() {
 document.addEventListener('DOMContentLoaded', function () {
     fetchStats();
 });
+
+function refreshRooms() {
+    fetch('https://localhost:5284/api/KhachSanAPI/GetRooms', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+    })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.rooms) {
+                const rooms = document.querySelectorAll('.room');
+                rooms.forEach(room => {
+                    const roomId = room.getAttribute('data-room-id');
+                    const roomData = data.rooms.find(r => r.maPhong.toString() === roomId);
+                    if (roomData) {
+                        // Lấy thông tin đặt phòng để kiểm tra MaNhomDatPhong
+                        fetch(`https://localhost:5284/api/KhachSanAPI/GetBookingDetailsByRoom/${roomId}`, {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include'
+                        })
+                            .then(response => response.json())
+                            .then(bookingData => {
+                                const isOccupied = roomData.dangSuDung || (bookingData.success && bookingData.maDatPhong);
+                                const doorIcon = isOccupied ? 'fa-door-open' : 'fa-door-closed';
+                                room.className = `room ${isOccupied ? 'occupied' : ''}`;
+                                room.querySelector('.door-icon').className = `fa-solid ${doorIcon} door-icon`;
+                                room.querySelector('.status').textContent = isOccupied ? 'Đang sử dụng' : 'Trống';
+                                if (bookingData.success && bookingData.maDatPhong) {
+                                    room.setAttribute('data-datphong-id', bookingData.maDatPhong);
+                                    room.setAttribute('data-customer', bookingData.customer || '');
+                                    room.setAttribute('data-checkin', bookingData.ngayNhanPhong || '');
+                                } else {
+                                    room.setAttribute('data-datphong-id', '');
+                                    room.removeAttribute('data-customer');
+                                    room.removeAttribute('data-checkin');
+                                }
+                            })
+                            .catch(error => {
+                                console.error(`Lỗi khi lấy chi tiết đặt phòng cho phòng ${roomId}:`, error);
+                                room.setAttribute('data-datphong-id', '');
+                            });
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi khi làm mới danh sách phòng:', error);
+            showToast('Lỗi khi làm mới danh sách phòng: ' + error.message, 'error');
+        });
+}

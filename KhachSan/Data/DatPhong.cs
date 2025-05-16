@@ -24,6 +24,7 @@ public partial class DatPhong
     public DateTime NgayTao { get; set; }
     public DateTime NgayCapNhat { get; set; }
     public string LoaiDatPhong { get; set; }
+    public DateTime? NgayNhanPhongDuKien { get; set; } // Thêm trường mới
 
     // Navigation properties
     public virtual NhomDatPhong NhomDatPhong { get; set; }

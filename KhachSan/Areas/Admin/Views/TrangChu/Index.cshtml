@@ -1,0 +1,167 @@
+﻿@{
+    ViewData["Title"] = "Trang quản lý khách sạn";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container mt-4">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Trang quản lý khách sạn</h1>
+    </div>
+    <!-- Content Row -->
+    <div class="row g-4">
+        <!-- Số lượng phòng -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Số lượng phòng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongPhong"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bed fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng đặt phòng -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Số lượng đặt phòng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongDatPhong"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng chi tiết đặt phòng -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Số lượng chi tiết đặt phòng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongChiTietDatPhong"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng loại phòng -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Số lượng loại phòng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongLoaiPhong"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng khách hàng -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Số lượng khách hàng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongKhachHang"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng dịch vụ -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Số lượng dịch vụ
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongDichVu"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-concierge-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tổng doanh thu trong năm -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Tổng doanh thu trong năm
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @string.Format("{0:N0} VND", ViewData["TongDoanhThu"])
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số lượng mã khuyến mãi -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Số lượng mã khuyến mãi
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewData["SoLuongMaKhuyenMai"]</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percent fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    </Anyone>
+                </div>
+            </div>
+        </div>
+    </div>

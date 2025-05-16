@@ -13,6 +13,8 @@ public partial class NhomDatPhong
     public int MaNhanVien { get; set; }
     public DateTime NgayTao { get; set; }
     public string? TrangThai { get; set; }
+    public DateTime? NgayNhanPhong { get; set; } // Thêm trường mới
+    public DateTime? NgayTraPhong { get; set; } // Thêm trường mới
 
     // Navigation properties
     public virtual NguoiDung? NguoiDaiDien { get; set; }
