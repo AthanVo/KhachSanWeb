@@ -1,51 +1,321 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Khách Sạn</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2Lw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Đa Cấp - Khách Sạn</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Thêm meta tag cho CSRF -->
+    @using Microsoft.AspNetCore.Antiforgery
+    @inject IAntiforgery Antiforgery
+    <style>
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 10px 0;
+        }
 
-    @RenderSection("Styles", required: false)
+        .navbar-brand {
+            font-weight: 700;
+            color: #1a73e8;
+        }
+
+        .nav-link {
+            color: #333;
+            font-weight: 500;
+            padding: 10px 15px !important;
+            transition: all 0.3s ease;
+        }
+
+            .nav-link:hover {
+                color: #1a73e8;
+            }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px 0;
+        }
+
+        .dropdown-item {
+            padding: 8px 20px;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+            .dropdown-item:hover {
+                color: #1a73e8;
+                background-color: #f5f9ff;
+            }
+
+            .dropdown-item i {
+                width: 20px;
+                text-align: center;
+                margin-right: 5px;
+            }
+
+        .dropdown-submenu {
+            position: relative;
+        }
+
+            .dropdown-submenu .dropdown-menu {
+                top: 0;
+                left: 100%;
+                margin-top: -1px;
+            }
+
+            .dropdown-submenu:hover > .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-submenu > a:after {
+                display: block;
+                content: " ";
+                float: right;
+                width: 0;
+                height: 0;
+                border-color: transparent;
+                border-style: solid;
+                border-width: 5px 0 5px 5px;
+                border-left-color: #ccc;
+                margin-top: 5px;
+                margin-right: -10px;
+            }
+
+            .dropdown-submenu:hover > a:after {
+                border-left-color: #1a73e8;
+            }
+
+        .badge-custom {
+            background-color: #ff6b6b;
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 10px;
+        }
+
+        .navbar-nav .nav-item.active .nav-link {
+            color: #1a73e8;
+            font-weight: 600;
+        }
+
+        media (max-width: 992px) {
+            .dropdown-submenu .dropdown-menu
+
+        {
+            left: 0;
+            margin-left: 15px;
+            margin-top: 0;
+        }
+
+        .dropdown-submenu > a:after {
+            transform: rotate(90deg);
+            margin-right: 0;
+            float: right;
+        }
+
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container">
+                <a class="navbar-brand" href="#">
                     <i class="fas fa-hotel me-2"></i>Khách Sạn
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="#">
                                 <i class="fas fa-home me-1"></i>Trang chủ
                             </a>
                         </li>
+
+                        <!-- Menu đa cấp Phòng -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="roomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bed me-1"></i>Phòng
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="roomDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-list"></i> Tất cả phòng
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-submenu">
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-star"></i> Loại phòng <i class="fas fa-angle-right ms-2"></i>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-user"></i> Standard
+                                                <span class="badge badge-custom ms-1">Phổ biến</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-user-friends"></i> Superior
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-crown"></i> Deluxe
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-gem"></i> Suite
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="dropdown-submenu">
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-users"></i> Sức chứa <i class="fas fa-angle-right ms-2"></i>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-user"></i> Phòng đơn
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-user-friends"></i> Phòng đôi
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-users"></i> Phòng gia đình
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-percentage"></i> Khuyến mãi
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Menu đa cấp Dịch vụ -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="serviceDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-concierge-bell me-1"></i>Dịch vụ
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="serviceDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-utensils"></i> Nhà hàng
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-spa"></i> Spa & Massage
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-swimming-pool"></i> Hồ bơi
+                                    </a>
+                                </li>
+                                <li class="dropdown-submenu">
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-dumbbell"></i> Thể thao & Giải trí <i class="fas fa-angle-right ms-2"></i>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-dumbbell"></i> Phòng tập gym
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-table-tennis"></i> Các môn thể thao
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-child"></i> Khu vui chơi trẻ em
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-car"></i> Dịch vụ đưa đón
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Menu đa cấp Khuyến mãi -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="promotionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-tags me-1"></i>Khuyến mãi
+                                <span class="badge badge-custom ms-1">Hot</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="promotionDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-fire"></i> Ưu đãi hot
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-calendar-alt"></i> Khuyến mãi theo mùa
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-user-friends"></i> Khuyến mãi theo nhóm
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-gift"></i> Quà tặng đặc biệt
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Menu đơn giản -->
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="KhachSan" asp-action="KhachSan">
-                                <i class="fas fa-hotel me-1"></i>Khách Sạn
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-images me-1"></i>Thư viện ảnh
                             </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">
-                                <i class="fas fa-shield-alt me-1"></i>Privacy
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-info-circle me-1"></i>Giới thiệu
                             </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Admin" asp-controller="TrangChu" asp-action="Index">
-                                <i class="fas fa-user-shield me-1"></i>Admin
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-phone me-1"></i>Liên hệ
                             </a>
                         </li>
                     </ul>
+
                     <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-search me-1"></i>
+                            </a>
+                        </li>
+
                         @if (Context.Session.GetInt32("NguoiDungId") != null)
                         {
                             <li class="nav-item dropdown">
@@ -53,9 +323,16 @@
                                     <i class="fas fa-user me-1"></i>Xin chào, @Context.Session.GetString("HoTen")
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" asp-controller="TaiKhoan" asp-action="Thongtinnguoidung">Thông tin</a></li>
-                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="logout()">Đăng xuất</a></li>
-
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="TaiKhoan" asp-action="Thongtinnguoidung">
+                                            <i class="fas fa-user-circle me-1"></i>Thông tin tài khoản
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item logout-link" href="javascript:void(0);" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         }
@@ -77,49 +354,77 @@
             </div>
         </nav>
     </header>
+    @RenderBody()
 
-    <div class="container">
-        <main role="main" class="pb-3 main-content fade-in">
-            @RenderBody()
-        </main>
+    <div class="container mt-5 text-center">
+        <h2>Menu Đa Cấp cho Trang Web Khách Sạn</h2>
+        <p class="mt-4">Di chuột qua các mục menu để xem các menu con</p>
     </div>
 
-    <footer class="footer text-center">
-        <div class="container">
-            Bản Quyền Thuộc về Đức Thịnh - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/khachsan.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
     <script>
-        function logout() {
-            // Gửi yêu cầu POST đến action Logout qua fetch API
+        // Xử lý menu đa cấp cho thiết bị di động
+        $(document).ready(function() {
+            // Loại trừ liên kết đăng xuất khỏi xử lý menu
+            $('.dropdown-submenu > a:not(.logout-link)').on('click', function(e) {
+                if ($(window).width() < 992) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).next('.dropdown-menu').toggle();
+                }
+            });
+
+            // Đóng tất cả menu con khi đóng menu chính
+            $('.navbar-collapse').on('hide.bs.collapse', function () {
+                $('.dropdown-submenu .dropdown-menu').hide();
+            });
+        });
+    </script>
+    <script>
+                function logout() {
+            console.log('Logout function called');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             fetch('/TaiKhoan/Logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': csrfToken || ''
                 },
-                credentials: 'include' // Bao gồm cookie trong yêu cầu
+                credentials: 'include'
             })
             .then(response => {
                 if (response.ok) {
-                    // Chuyển hướng về trang chủ sau khi đăng xuất thành công
-                    window.location.href = '/Home/Index';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đăng xuất thành công',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+         kjø                window.location.href = '/Home/Index';
+                    });
                 } else {
-                    alert('Đăng xuất không thành công. Vui lòng thử lại.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        text: 'Đăng xuất không thành công. Vui lòng thử lại.'
+                    });
                 }
             })
             .catch(error => {
-                console.error('Lỗi khi đăng xuất:', error);
-                alert('Đăng xuất không thành công. Vui lòng thử lại.');
+                console.error('Error during logout:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: 'Đăng xuất không thành công. Vui lòng thử lại.'
+                });
             });
         }
     </script>
-    <!-- Thêm SweetAlert2 qua CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/khachsan.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -28,6 +28,38 @@ namespace KhachSan.Controllers
             _context = context;
         }
 
+        [Authorize]
+        [HttpGet]
+        public IActionResult Thongtinnguoidung()
+        {
+            // Lấy thông tin từ claims (được lưu khi đăng nhập)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out int maNguoiDung))
+            {
+                return RedirectToAction("Dangnhap", "TaiKhoan");
+            }
+
+            // Lấy thông tin người dùng từ database
+            var user = _context.NguoiDung.Find(maNguoiDung);
+            if (user == null)
+            {
+                return RedirectToAction("Dangnhap", "TaiKhoan");
+            }
+
+            // Tạo model để hiển thị
+            var model = new ThongTinNguoiDungViewModell
+            {
+                NguoiDungId = user.MaNguoiDung,
+                HoTen = user.HoTen,
+                Email = user.Email,
+                SoDienThoai = user.SoDienThoai,
+                DiaChi = user.DiaChi ?? "Chưa cập nhật",
+                NgayDangKy = user.NgayTao
+            };
+
+            return View(model);
+        }
+
         // GET: Đăng ký
         [HttpGet]
         public IActionResult Dangky()
@@ -293,6 +325,7 @@ namespace KhachSan.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             // Xóa session

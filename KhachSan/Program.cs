@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
+
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+
 using KhachSan.Data;
 using KhachSan.Middleware;
-using System;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,9 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
-// Đăng ký DbContext với chuỗi kết nối từ appsettings.json
+// Đăng ký ApplicationDBContext và lấy chuỗi kết nối từ appsettings.json
 builder.Services.AddDbContext<ApplicationDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddControllersWithViews();
 
 // Cấu hình CORS
 // Cấu hình CORS - Cập nhật để cho phép localhost:5284
@@ -23,7 +24,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:7112", "https://localhost:5284")
+        policy.WithOrigins("https://localhost:7112", "https://localhost:5284", "http://localhost:5500")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

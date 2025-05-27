@@ -1,0 +1,750 @@
+﻿@{
+    ViewData["Title"] = "Thông tin người dùng";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <!-- Thư viện CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700&display=swap">
+    <!-- CSRF Token -->
+    @using Microsoft.AspNetCore.Antiforgery
+    @inject IAntiforgery Antiforgery
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --text-color: #333;
+            --text-light: #7f8c8d;
+            --card-bg: #fff;
+            --header-bg: #fff;
+            --border-radius: 10px;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: var(--text-color);
+            transition: var(--transition);
+        }
+
+            body.dark-mode {
+                --primary-color: #1a1a2e;
+                --secondary-color: #3282b8;
+                --accent-color: #e94560;
+                --light-color: #334756;
+                --dark-color: #0f3460;
+                --text-color: #e9e9e9;
+                --text-light: #bbb;
+                --card-bg: #2c3e50;
+                --header-bg: #1a1a2e;
+                --shadow-color: rgba(0, 0, 0, 0.25);
+                background-color: #121212;
+            }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .header {
+            background-color: var(--header-bg);
+            box-shadow: 0 2px 10px var(--shadow-color);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar {
+            padding: 15px 0;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .info {
+            line-height: 1.2;
+        }
+
+            .info p {
+                margin: 0;
+                font-size: 14px;
+                color: var(--text-light);
+            }
+
+                .info p:first-child {
+                    font-weight: 500;
+                    font-size: 16px;
+                    color: var(--primary-color);
+                }
+
+        .navbar-nav .nav-item {
+            margin: 0 10px;
+        }
+
+        .navbar-nav .nav-link {
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: var(--transition);
+        }
+
+            .navbar-nav .nav-link:hover,
+            .navbar-nav .nav-item.active .nav-link {
+                background-color: var(--secondary-color);
+                color: white;
+            }
+
+        .right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .time {
+            font-size: 14px;
+            color: var(--text-light);
+            text-align: right;
+            min-width: 200px;
+        }
+
+        .button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+            .button:hover {
+                background-color: var(--primary-color);
+                transform: translateY(-2px);
+            }
+
+        .toggle-dark-mode {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+            .toggle-dark-mode:hover {
+                background-color: var(--dark-color);
+                color: var(--light-color);
+            }
+
+        .main {
+            padding: 40px 0;
+            min-height: calc(100vh - 92px);
+        }
+
+        .user-info-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: var(--transition);
+            margin-bottom: 30px;
+            border-top: 5px solid var(--secondary-color);
+        }
+
+            .user-info-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px var(--shadow-color);
+            }
+
+            .user-info-card h3 {
+                position: relative;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+                color: var(--secondary-color);
+            }
+
+                .user-info-card h3:after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 80px;
+                    height: 3px;
+                    background-color: var(--secondary-color);
+                }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        body.dark-mode .info-item {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-item:hover {
+            background-color: rgba(0,0,0,0.02);
+            padding-left: 15px;
+        }
+
+        body.dark-mode .info-item:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .info-item .label {
+            font-weight: 500;
+            color: var(--text-light);
+            width: 40%;
+            display: flex;
+            align-items: center;
+        }
+
+            .info-item .label i {
+                margin-right: 10px;
+                color: var(--secondary-color);
+            }
+
+        .info-item .value {
+            color: var(--text-color);
+            font-weight: 500;
+            text-align: right;
+            width: 60%;
+        }
+
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+            .actions .button {
+                min-width: 150px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s;
+        }
+
+        keyframes modalFadeIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+            .close-btn:hover {
+                color: var(--accent-color);
+            }
+
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+            .form label {
+                font-weight: 500;
+                color: var(--text-light);
+                margin-bottom: 5px;
+            }
+
+            .form input {
+                padding: 12px 15px;
+                border: 1px solid rgba(0,0,0,0.1);
+                border-radius: var(--border-radius);
+                font-size: 16px;
+                transition: var(--transition);
+                background-color: var(--card-bg);
+                color: var(--text-color);
+            }
+
+                .form input:focus {
+                    border-color: var(--secondary-color);
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+                }
+
+        .book-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            min-width: 100px;
+        }
+
+            .book-btn:hover {
+                opacity: 0.9;
+                transform: translateY(-2px);
+            }
+
+        .cancel-btn {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            min-width: 100px;
+        }
+
+            .cancel-btn:hover {
+                background-color: var(--danger-color);
+                color: white;
+            }
+
+        .left {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Responsive adjustments */
+        media (max-width: 992px) {
+            .navbar-collapse
+
+        {
+            margin-top: 15px;
+        }
+
+        .right {
+            margin-top: 15px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .time {
+            text-align: left;
+        }
+
+        }
+
+        media (max-width: 768px) {
+            .info-item
+
+        {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .info-item .label,
+        .info-item .value {
+            width: 100%;
+            text-align: left;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+
+        .left {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .logo {
+            margin-bottom: 10px;
+        }
+
+        }
+
+        media (max-width: 576px) {
+            .user-info-card
+
+        {
+            padding: 20px 15px;
+        }
+
+        }
+
+        /* Profile picture styles */
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: var(--light-color);
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 5px solid var(--light-color);
+            box-shadow: 0 4px 10px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            color: var(--primary-color);
+        }
+
+            .profile-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container">
+                <div class="left">
+                    <img src="~/anh/screenshot 2025-04-11 030035.png" alt="Logo" class="logo" />
+                    <div class="info">
+                        <p>@Context.Session.GetString("HoTen")</p>
+                        <p>Mã NV: @Context.Session.GetInt32("NguoiDungId")</p>
+                        <p>Hệ thống của Đức Thịnh</p>
+                    </div>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("KhachSan", "KhachSan")"><i class="fas fa-home me-1"></i> Trang chủ</a>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="#"><i class="fas fa-user me-1"></i> Thông tin người dùng</a>
+                        </li>
+                    </ul>
+                    <div class="right ms-auto">
+                        <div class="time" id="current-time"></div>
+                        <div class="d-flex gap-2">
+                            <button class="button" onclick="logout()"><i class="fas fa-sign-out-alt me-1"></i> Đăng xuất</button>
+                            <button class="toggle-dark-mode" onclick="toggleDarkMode()">
+                                <i class="fas fa-moon"></i> Chế độ tối
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <div class="container py-4">
+            <h2 class="mb-4 text-center">Thông tin người dùng</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-md-10">
+                    <div class="user-info-card">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="text-center">Hồ sơ cá nhân</h3>
+                        <div class="info">
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-id-card"></i> Mã người dùng:</span>
+                                <span class="value">@Model.NguoiDungId</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-user"></i> Họ và tên:</span>
+                                <span class="value">@Model.HoTen</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-envelope"></i> Email:</span>
+                                <span class="value">@Model.Email</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-phone"></i> Số điện thoại:</span>
+                                <span class="value">@Model.SoDienThoai</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-map-marker-alt"></i> Địa chỉ:</span>
+                                <span class="value">@Model.DiaChi</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label"><i class="fas fa-calendar-alt"></i> Ngày đăng ký:</span>
+                                <span class="value">@Model.NgayDangKy?.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="button" onclick="openEditProfileModal()"><i class="fas fa-edit me-1"></i> Chỉnh sửa thông tin</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal" id="editProfileModal" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeEditProfileModal()">×</button>
+            <h3 class="text-center mb-4">Chỉnh sửa thông tin</h3>
+            <div class="form">
+                <div>
+                    <label for="edit-name"><i class="fas fa-user me-1"></i> Họ và tên:</label>
+                    <input type="text" id="edit-name" value="@Model.HoTen" placeholder="Họ và tên">
+                </div>
+                <div>
+                    <label for="edit-email"><i class="fas fa-envelope me-1"></i> Email:</label>
+                    <input type="email" id="edit-email" value="@Model.Email" placeholder="Email">
+                </div>
+                <div>
+                    <label for="edit-phone"><i class="fas fa-phone me-1"></i> Số điện thoại:</label>
+                    <input type="text" id="edit-phone" value="@Model.SoDienThoai" placeholder="Số điện thoại">
+                </div>
+                <div>
+                    <label for="edit-address"><i class="fas fa-map-marker-alt me-1"></i> Địa chỉ:</label>
+                    <input type="text" id="edit-address" value="@Model.DiaChi" placeholder="Địa chỉ">
+                </div>
+                <div class="actions mt-3">
+                    <button class="book-btn" onclick="saveProfile()"><i class="fas fa-save me-1"></i> Lưu</button>
+                    <button class="cancel-btn" onclick="closeEditProfileModal()"><i class="fas fa-times me-1"></i> Hủy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const button = document.querySelector('.toggle-dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                button.innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                button.innerHTML = '<i class="fas fa-moon"></i> Chế độ tối';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        }
+
+        // Check dark mode on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.toggle-dark-mode').innerHTML = '<i class="fas fa-sun"></i> Chế độ sáng';
+            }
+        });
+
+        // Logout function
+        function logout() {
+            Swal.fire({
+                title: 'Bạn có chắc muốn đăng xuất?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Đăng xuất',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#3498db',
+                cancelButtonColor: '#95a5a6',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    fetch('/TaiKhoan/Logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': csrfToken || ''
+                        },
+                        credentials: 'include'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đăng xuất thành công',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                window.location.href = '/Home/Index';
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Đăng xuất không thành công. Vui lòng thử lại.'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Đăng xuất không thành công. Vui lòng thử lại.'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Modal functions
+        function openEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'flex';
+            document.getElementById('editProfileModal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+            document.getElementById('editProfileModal').setAttribute('aria-hidden', 'true');
+        }
+
+        function saveProfile() {
+            // Collect form data
+            const hoTen = document.getElementById('edit-name').value;
+            const email = document.getElementById('edit-email').value;
+            const soDienThoai = document.getElementById('edit-phone').value;
+            const diaChi = document.getElementById('edit-address').value;
+
+            // Validation (basic example)
+            if (!hoTen || !email || !soDienThoai || !diaChi) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: 'Vui lòng điền đầy đủ thông tin.'
+                });
+                return;
+            }
+
+            // Here you would normally send data to server
+            // For this example, we'll just show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Lưu thành công',
+                text: 'Thông tin của bạn đã được cập nhật.',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            closeEditProfileModal();
+
+            // Update displayed values (in a real app, would happen after server confirmation)
+            document.querySelectorAll('.info-item').forEach(item => {
+                const label = item.querySelector('.label').textContent;
+                if (label.includes('Họ và tên')) {
+                    item.querySelector('.value').textContent = hoTen;
+                } else if (label.includes('Email')) {
+                    item.querySelector('.value').textContent = email;
+                } else if (label.includes('Số điện thoại')) {
+                    item.querySelector('.value').textContent = soDienThoai;
+                } else if (label.includes('Địa chỉ')) {
+                    item.querySelector('.value').textContent = diaChi;
+                }
+            });
+        }
+
+        // Close modal if clicked outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editProfileModal');
+            if (event.target === modal) {
+                closeEditProfileModal();
+            }
+        }
+    </script>
+</body>
+</html>
